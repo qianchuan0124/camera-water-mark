@@ -1,0 +1,4 @@
+[V4+ Styles]
+Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding
+Style: Default,Arial,8,&H000000FF,&H00000000,-1,0,0,0,100,100,0.0,0,1,0.0,0,2,10,10,8,1,\q1
+Style: Secondary,Arial,8,&H000000FF,&H00000000,-1,0,0,0,100,100,0.0,0,1,0.0,0,2,10,10,8,1,\q1

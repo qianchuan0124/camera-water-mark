@@ -1,0 +1,21 @@
+.idea
+.DS_Store
+release
+input
+output
+__pycache__
+logos/logo_psds
+exiftool
+build
+dist
+logs
+.watermark
+
+# 应用数据
+/AppData/
+/output/
+/work-dir/
+.vscode/
+/build/
+/dist/
+/app/resource/bin/

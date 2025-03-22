@@ -1,0 +1,5 @@
+PyQt5
+PyQt-Fluent-Widgets
+Pillow
+python-dateutil
+pyyaml
