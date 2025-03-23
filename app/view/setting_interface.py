@@ -3,11 +3,12 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Optional, Tuple
+import json
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QColor, QFontDatabase
 from PyQt5.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CardWidget
+from qfluentwidgets import BodyLabel, CardWidget, PrimaryPushButton
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
     ImageLabel,
@@ -20,7 +21,7 @@ from qfluentwidgets import (
     SettingCardGroup,
 )
 
-from app.config import cfg, SUBTITLE_STYLE_PATH
+from app.config import cfg, STYLE_PATH
 from app.components.common_card import (
     ComboBoxSettingCard,
     DoubleSpinBoxSettingCard,
@@ -31,7 +32,7 @@ from app.components.common_card import (
 from app.config import ASSETS_PATH, CACHE_PATH
 from app.utils.mater_mark_preview import generate_preview
 from app.entity.constants import DISPLAY_TYPE, display_type_key, display_type_value
-from app.thread.image_handle_thread import ImageHandleTask, ImageHandleThread
+from app.thread.image_handle_thread import ImageHandleTask, ImageHandleThread, HandleProgress, ImageHandleStatus
 
 DEFAULT_BG = {
     "path": ASSETS_PATH / "default_bg.jpg",
@@ -40,6 +41,7 @@ DEFAULT_BG = {
 }
 
 # 设置水印样式
+
 
 class SettingInterface(QWidget):
     def __init__(self, parent=None):
@@ -51,6 +53,7 @@ class SettingInterface(QWidget):
         self.hBoxLayout = QHBoxLayout(self)
 
         # 初始化界面组件
+        self._initValues()
         self._initSettingsArea()
         self._initPreviewArea()
         self._initSettingCards()
@@ -65,6 +68,32 @@ class SettingInterface(QWidget):
 
         # 连接信号
         self.connectSignals()
+
+    def _initValues(self):
+        self.leftTopTypeValue = display_type_key(cfg.leftTopType.value)
+        self.leftTopFontColorValue = QColor(cfg.leftTopFontColor.value)
+        self.leftTopBoldValue = cfg.leftTopBold.value
+
+        self.leftBottomTypeValue = display_type_key(cfg.leftBottomType.value)
+        self.leftBottomFontColorValue = QColor(cfg.leftBottomFontColor.value)
+        self.leftBottomBoldValue = cfg.leftBottomBold.value
+
+        self.rightTopTypeValue = display_type_key(cfg.rightTopType.value)
+        self.rightTopFontColorValue = QColor(cfg.rightTopFontColor.value)
+        self.rightTopBoldValue = cfg.rightTopBold.value
+
+        self.rightBottomTypeValue = display_type_key(cfg.rightBottomType.value)
+        self.rightBottomFontColorValue = QColor(cfg.rightBottomFontColor.value)
+        self.rightBottomBoldValue = cfg.rightBottomBold.value
+
+        self.baseFontSizeValue = cfg.baseFontSize.value
+        self.baseQualityValue = cfg.baseQuality.value
+        print(f"等效间距: {cfg.useEquivalentFocal.value}")
+        self.useEquivalentFocalValue = cfg.useEquivalentFocal.value
+        self.useOriginRatioPaddingValue = cfg.useOriginRatioPadding.value
+        self.addShadowValue = cfg.addShadow.value
+        self.whiteMarginValue = cfg.whiteMargin.value
+        self.whiteMarginWidthValue = cfg.whiteMarginWidth.value
 
     def _initSettingsArea(self):
         """初始化左侧设置区域"""
@@ -123,8 +152,36 @@ class SettingInterface(QWidget):
         self.previewBottomLayout.addWidget(self.newStyleButton)
         self.previewBottomLayout.addWidget(self.openStyleFolderButton)
 
+        self.previewSettingWidget = QWidget()
+        self.previewSettingLayout = QHBoxLayout(self.previewSettingWidget)
+
+        self.saveButton = PrimaryPushButton(self.tr("保存"), self, icon=FIF.SAVE)
+        self.saveButton.clicked.connect(
+            lambda: self.saveStyle(cfg.styleName.value)
+        )
+        self.saveButton.setFixedHeight(34)
+
+        self.resetButton = PrimaryPushButton(
+            self.tr("重置"), self, icon=FIF.BRUSH)
+        self.resetButton.clicked.connect(
+            lambda: self.resetStyle()
+        )
+        self.resetButton.setFixedHeight(34)
+
+        self.renderButton = PrimaryPushButton(
+            self.tr("渲染"), self, icon=FIF.CAMERA)
+        self.renderButton.clicked.connect(
+            lambda: self.renderStyle()
+        )
+        self.renderButton.setFixedHeight(34)
+
+        self.previewSettingLayout.addWidget(self.saveButton)
+        self.previewSettingLayout.addWidget(self.resetButton)
+        self.previewSettingLayout.addWidget(self.renderButton)
+
         self.previewLayout.addWidget(self.previewTopWidget)
         self.previewLayout.addWidget(self.previewBottomWidget)
+        self.previewLayout.addWidget(self.previewSettingWidget)
         self.previewLayout.addStretch(1)
 
     def _initSettingCards(self):
@@ -139,7 +196,7 @@ class SettingInterface(QWidget):
 
         # 左上角字体颜色
         self.leftTopColor = ColorSettingCard(
-            QColor(33, 33, 33),
+            self.leftTopFontColorValue,
             FIF.PALETTE,
             self.tr("左上角字体颜色"),
             self.tr("设置左上角字体颜色"),
@@ -150,7 +207,7 @@ class SettingInterface(QWidget):
             FIF.FONT_SIZE,
             self.tr("左上角字体是否加粗"),
             self.tr("设置左上角字体是否加粗"),
-            cfg.leftTopBold,
+            None,
             self.layoutGroup
         )
 
@@ -164,7 +221,7 @@ class SettingInterface(QWidget):
 
         # 左下角字体颜色
         self.leftBottomColor = ColorSettingCard(
-            QColor(117, 117, 117),
+            self.leftBottomFontColorValue,
             FIF.PALETTE,
             self.tr("左下角字体颜色"),
             self.tr("设置左上角字体颜色"),
@@ -175,7 +232,7 @@ class SettingInterface(QWidget):
             FIF.FONT_SIZE,
             self.tr("左下角字体是否加粗"),
             self.tr("设置左上角字体是否加粗"),
-            cfg.leftBottomBold,
+            None,
             self.layoutGroup
         )
 
@@ -189,7 +246,7 @@ class SettingInterface(QWidget):
 
         # 右上角字体颜色
         self.rightTopColor = ColorSettingCard(
-            QColor(33, 33, 33),
+            self.rightTopFontColorValue,
             FIF.PALETTE,
             self.tr("右上角字体颜色"),
             self.tr("设置左上角字体颜色"),
@@ -200,7 +257,7 @@ class SettingInterface(QWidget):
             FIF.FONT_SIZE,
             self.tr("左上角字体是否加粗"),
             self.tr("设置左上角字体是否加粗"),
-            cfg.rightTopBold,
+            None,
             self.layoutGroup
         )
 
@@ -214,7 +271,7 @@ class SettingInterface(QWidget):
 
         # 右下角字体颜色
         self.rightBottomColor = ColorSettingCard(
-            QColor(117, 117, 117),
+            self.rightBottomFontColorValue,
             FIF.PALETTE,
             self.tr("左上角字体颜色"),
             self.tr("设置左上角字体颜色"),
@@ -225,17 +282,17 @@ class SettingInterface(QWidget):
             FIF.FONT_SIZE,
             self.tr("左上角字体是否加粗"),
             self.tr("设置左上角字体是否加粗"),
-            cfg.rightBottomBold,
+            None,
             self.layoutGroup
         )
-        
+
         # 字体大小
         self.baseFontSize = SpinBoxSettingCard(
             FIF.FONT_SIZE,
             self.tr("基础字号"),
             self.tr("设置基础字号"),
             minimum=1,
-            maximum=20,
+            maximum=3,
         )
 
         # 渲染质量
@@ -252,7 +309,7 @@ class SettingInterface(QWidget):
             FIF.PIN,
             self.tr("使用等效焦距"),
             self.tr("是否使用等效焦距"),
-            cfg.useEquivalentFocal,
+            None,
             self.globalGroup
         )
 
@@ -261,7 +318,7 @@ class SettingInterface(QWidget):
             FIF.ALBUM,
             self.tr("使用原始比例填充"),
             self.tr("是否使用原始比例填充"),
-            cfg.useOriginRatioPadding,
+            None,
             self.globalGroup
         )
 
@@ -270,7 +327,7 @@ class SettingInterface(QWidget):
             FIF.LEAF,
             self.tr("添加阴影"),
             self.tr("是否添加阴影"),
-            cfg.addShadow,
+            None,
             self.globalGroup
         )
 
@@ -279,7 +336,7 @@ class SettingInterface(QWidget):
             FIF.COPY,
             self.tr("白色边框"),
             self.tr("是否添加白色边框"),
-            cfg.whiteMargin,
+            None,
             self.globalGroup
         )
 
@@ -342,22 +399,44 @@ class SettingInterface(QWidget):
         """
         )
 
+    def __setSettings(self):
+        self.leftTopType.comboBox.setCurrentText(
+            self.leftTopTypeValue)
+        self.leftTopColor.setColor(self.leftTopFontColorValue)
+        self.leftTopBold.setValue(self.leftTopBoldValue)
+
+        self.leftBottomType.comboBox.setCurrentText(
+            self.leftBottomTypeValue)
+        self.leftBottomColor.setColor(self.leftBottomFontColorValue)
+        self.leftBottomBold.setValue(self.leftBottomBoldValue)
+        
+        self.rightTopType.comboBox.setCurrentText(
+            self.rightTopTypeValue)
+        self.rightTopColor.setColor(self.rightTopFontColorValue)
+        self.rightTopBold.setValue(self.rightTopBoldValue)
+        
+        self.rightBottomType.comboBox.setCurrentText(
+            self.rightBottomTypeValue)
+        self.rightBottomColor.setColor(self.rightBottomFontColorValue)
+        self.rightBottomBold.setValue(self.rightBottomBoldValue)
+
+        self.baseQuality.setValue(int(self.baseQualityValue))
+        self.baseFontSize.setValue(int(self.baseFontSizeValue))
+
+        self.useEquivalentFocal.setValue(self.useEquivalentFocalValue)
+        self.useOriginRatioPadding.setValue(self.useOriginRatioPaddingValue)
+        self.addShadow.setValue(self.addShadowValue)
+        self.whiteMargin.setValue(self.whiteMarginValue)
+        self.whiteMarginWidth.setValue(int(self.whiteMarginWidthValue))
+
     def __setValues(self):
         """设置初始值"""
         # 设置布局内容
-        self.leftTopType.comboBox.setCurrentText(display_type_key(cfg.get(cfg.leftTopType)))
-        self.leftBottomType.comboBox.setCurrentText(display_type_key(cfg.get(cfg.leftBottomType)))
-        self.rightTopType.comboBox.setCurrentText(display_type_key(cfg.get(cfg.rightTopType)))
-        self.rightBottomType.comboBox.setCurrentText(display_type_key(cfg.get(cfg.rightBottomType)))
-
-        self.baseQuality.setValue(cfg.get(cfg.baseQuality))
-        self.baseFontSize.setValue(cfg.get(cfg.baseFontSize))
-        self.whiteMarginWidth.setValue(cfg.get(cfg.whiteMarginWidth))
+        self.__setSettings()
 
         # 设置字幕样式
-        self.styleNameComboBox.comboBox.setCurrentText(cfg.get(cfg.subtitle_style_name))
-
-        self.loadStyle("")
+        self.styleNameComboBox.comboBox.setCurrentText(
+            cfg.get(cfg.styleName))
 
         # 获取系统字体,设置comboBox的选项
         # fontDatabase = QFontDatabase()
@@ -367,122 +446,97 @@ class SettingInterface(QWidget):
         # 设置字体选项框最大显示数量
         # self.subFontCard.comboBox.setMaxVisibleItems(12)
 
-        # 获取样式目录下的所有txt文件名
-        # style_files = [f.stem for f in SUBTITLE_STYLE_PATH.glob("*.txt")]
-        # if "default" in style_files:
-        #     style_files.insert(0, style_files.pop(style_files.index("default")))
-        # else:
-        #     style_files.insert(0, "default")
-        #     self.saveStyle("default")
-        # self.styleNameComboBox.comboBox.addItems(style_files)
+        # 获取样式目录下的所有json文件名
+        style_files = [f.stem for f in STYLE_PATH.glob("*.json")]
+        if "default" in style_files:
+            style_files.insert(0, style_files.pop(
+                style_files.index("default")))
+        else:
+            style_files.insert(0, "default")
+            self.saveStyle("default")
+        self.styleNameComboBox.comboBox.addItems(style_files)
 
-        # # 加载默认样式
-        # subtitle_style_name = cfg.get(cfg.subtitle_style_name)
-        # if subtitle_style_name in style_files:
-        #     self.loadStyle(subtitle_style_name)
-        #     self.styleNameComboBox.comboBox.setCurrentText(subtitle_style_name)
-        # else:
-        #     self.loadStyle(style_files[0])
-        #     self.styleNameComboBox.comboBox.setCurrentText(style_files[0])
+        # 加载默认样式
+        style_name = cfg.get(cfg.styleName)
+        if style_name in style_files:
+            self.loadStyle(style_name)
+            self.styleNameComboBox.comboBox.setCurrentText(style_name)
+        else:
+            self.loadStyle(style_files[0])
+            self.styleNameComboBox.comboBox.setCurrentText(style_files[0])
 
     def connectSignals(self):
         """连接所有设置变更的信号到预览更新函数"""
         # 左上角
-        self.leftTopType.currentTextChanged.connect(self.onSettingChanged)
-        print(f"设置 ----> {display_type_value(self.leftTopType.comboBox.currentText())}")
-        self.leftTopType.currentTextChanged.connect(
-            lambda: cfg.set(cfg.leftTopType, display_type_value(self.leftTopType.comboBox.currentText()))
-        )
-        self.leftTopColor.colorChanged.connect(self.onSettingChanged)
+        self.leftTopType.currentTextChanged.connect(lambda text: setattr(self, "leftTopTypeValue", text))
+        self.leftTopColor.colorChanged.connect(lambda text: setattr(self, "leftTopFontColorValue", text))
+        self.leftTopBold.checkedChanged.connect(lambda text: setattr(self, "leftTopBoldValue", text))
 
         # 左下角
-        self.leftBottomType.currentTextChanged.connect(self.onSettingChanged)
-        self.leftBottomType.currentTextChanged.connect(
-            lambda: cfg.set(cfg.leftBottomType, display_type_value(self.leftBottomType.comboBox.currentText()))
-        )
-        self.leftBottomColor.colorChanged.connect(self.onSettingChanged)
+        self.leftBottomType.currentTextChanged.connect(lambda text: setattr(self, "leftBottomTypeValue", text))
+        self.leftBottomColor.colorChanged.connect(lambda text: setattr(self, "leftBottomFontColorValue", text))
+        self.leftBottomBold.checkedChanged.connect(lambda text: setattr(self, "leftBottomBoldValue", text))
 
         # 右上角
-        self.rightTopType.currentTextChanged.connect(self.onSettingChanged)
-        self.rightTopType.currentTextChanged.connect(
-            lambda: cfg.set(cfg.rightTopType, display_type_value(self.rightTopType.comboBox.currentText()))
-        )
-        self.rightTopColor.colorChanged.connect(self.onSettingChanged)
+        self.rightTopType.currentTextChanged.connect(lambda text: setattr(self, "rightTopTypeValue", text))
+        self.rightTopColor.colorChanged.connect(lambda text: setattr(self, "rightTopFontColorValue", text))
+        self.rightTopBold.checkedChanged.connect(lambda text: setattr(self, "rightTopBoldValue", text))
 
         # 右下角
-        self.rightBottomType.currentTextChanged.connect(self.onSettingChanged)
-        self.rightBottomType.currentTextChanged.connect(
-            lambda: cfg.set(cfg.rightBottomType, display_type_value(self.rightBottomType.comboBox.currentText()))
-        )
-        self.rightBottomColor.colorChanged.connect(self.onSettingChanged)
+        self.rightBottomType.currentTextChanged.connect(lambda text: setattr(self, "rightBottomTypeValue", text))
+        self.rightBottomColor.colorChanged.connect(lambda text: setattr(self, "rightBottomFontColorValue", text))
+        self.rightBottomBold.checkedChanged.connect(lambda text: setattr(self, "rightBottomBoldValue", text))
 
-        self.baseFontSize.valueChanged.connect(self.onSettingChanged)
-        self.baseQuality.valueChanged.connect(self.onSettingChanged)
-        self.whiteMarginWidth.valueChanged.connect(self.onSettingChanged)
-
+        self.baseFontSize.valueChanged.connect(lambda text: setattr(self, "baseFontSizeValue", text))
+        self.baseQuality.valueChanged.connect(lambda text: setattr(self, "baseQualityValue", text))
+        self.whiteMarginWidth.valueChanged.connect(lambda text: setattr(self, "whiteMarginWidthValue", text))
+        self.useEquivalentFocal.checkedChanged.connect(lambda text: setattr(self, "useEquivalentFocalValue", text))
+        self.useOriginRatioPadding.checkedChanged.connect(lambda text: setattr(self, "useOriginRatioPaddingValue", text))
+        self.addShadow.checkedChanged.connect(lambda text: setattr(self, "addShadowValue", text))
+        self.whiteMargin.checkedChanged.connect(lambda text: setattr(self, "whiteMarginValue", text))
 
         # 连接样式切换信号
         self.styleNameComboBox.currentTextChanged.connect(self.loadStyle)
         self.newStyleButton.clicked.connect(self.createNewStyle)
-        self.openStyleFolderButton.clicked.connect(self.on_open_style_folder_clicked)
+        self.openStyleFolderButton.clicked.connect(
+            self.on_open_style_folder_clicked)
 
     def on_open_style_folder_clicked(self):
         """打开样式文件夹"""
         if sys.platform == "win32":
-            os.startfile(SUBTITLE_STYLE_PATH)
+            os.startfile(STYLE_PATH)
         elif sys.platform == "darwin":  # macOS
-            subprocess.run(["open", SUBTITLE_STYLE_PATH])
+            subprocess.run(["open", STYLE_PATH])
         else:  # Linux
-            subprocess.run(["xdg-open", SUBTITLE_STYLE_PATH])
+            subprocess.run(["xdg-open", STYLE_PATH])
 
-    def onOrientationChanged(self):
-        """当预览方向改变时调用"""
-        orientation = self.orientationCard.comboBox.currentText()
-        # preview_image = (
-        #     DEFAULT_BG_LANDSCAPE if orientation == "横屏" else DEFAULT_BG_PORTRAIT
-        # )
-        # cfg.set(cfg.subtitle_preview_image, str(Path(preview_image["path"])))
-        self.updatePreview()
-
-    def onSettingChanged(self):
-        """当任何设置改变时调用"""
-        # 如果正在加载样式，不触发更新
-        if self._loading_style:
-            return
-
-        self.updatePreview()
-        # 获取当前选择的样式名称
-        current_style = self.styleNameComboBox.comboBox.currentText()
-        if current_style:
-            self.saveStyle(current_style)  # 自动保存为当前选择的样式
-        else:
-            self.saveStyle("default")  # 如果没有选择样式,保存为默认样式
-
-    def selectPreviewImage(self):
-        """选择预览背景图片"""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            self.tr("选择背景图片"),
-            "",
-            self.tr("图片文件") + " (*.png *.jpg *.jpeg)",
-        )
-        if file_path:
-            cfg.set(cfg.subtitle_preview_image, file_path)
-            self.updatePreview()
 
     def updatePreview(self):
         # 创建预览线程
         print("创建预览线程....")
         cache_preview = Path(CACHE_PATH) / "preview.png"
-        self.preview_task = ImageHandleTask(Path(DEFAULT_BG["path"]), cache_preview)
-        self.preview_thread = ImageHandleThread(self.preview_task)
+        if not os.path.exists(CACHE_PATH):
+            os.makedirs(CACHE_PATH)
+
+        self.preview_task = ImageHandleTask(
+            Path(DEFAULT_BG["path"]), cache_preview)
+        self.preview_thread = ImageHandleThread([self.preview_task])
         self.preview_thread.finished.connect(self.onPreviewReady)
         self.preview_thread.start()
 
-    def onPreviewReady(self, preview_path):
+    def onPreviewReady(self, progress: HandleProgress):
         """预览图片生成完成的回调"""
-        self.previewImage.setImage(preview_path)
-        self.updatePreviewImage()
+        task = progress.tasks[0]
+        if task and task.status == ImageHandleStatus.FINISHED:
+            self.previewImage.setImage(str(task.target_path))
+            self.updatePreviewImage()
+        else:
+            InfoBar.error(
+                self.tr("处理错误"),
+                self.tr("图片渲染错误"),
+                duration=3000,
+                parent=self,
+            )
 
     def updatePreviewImage(self):
         """更新预览图片"""
@@ -504,57 +558,64 @@ class SettingInterface(QWidget):
 
     def loadStyle(self, style_name):
         """加载指定样式"""
-        # style_path = SUBTITLE_STYLE_PATH / f"{style_name}.txt"
+        style_path = STYLE_PATH / f"{style_name}.json"
 
-        # if not style_path.exists():
-        #     return
+        if not style_path.exists():
+            return
 
         # # 设置标志位，防止触发onSettingChanged
-        # self._loading_style = True
+        self._loading_style = True
 
-        # with open(style_path, "r", encoding="utf-8") as f:
-        #     style_content = f.read()
+        with open(style_path, "r", encoding="utf-8") as f:
+            style_content = json.load(f)
 
-        # # 解析样式内容
-        # for line in style_content.split("\n"):
-        #     if line.startswith("Style: Default"):
-        #         # 解析主字幕样式
-        #         parts = line.split(",")
-        #         self.mainSizeCard.spinBox.setValue(int(parts[2]))
+        # 解析样式内容
+        self.leftTopTypeValue = display_type_key(style_content["Layout"]["LeftTopType"])
+        self.leftTopFontColorValue = QColor(style_content["Layout"]["LeftTopFontColor"])
+        self.leftTopBoldValue = style_content["Layout"]["LeftTopBold"]
 
-        #         vertical_spacing = int(parts[17])
-        #         // 需要修改
-        #         self.leftTopColor.setColor(QColor(parts[3]))
+        self.leftBottomTypeValue = display_type_key(style_content["Layout"]["LeftBottomType"])
+        self.leftBottomFontColorValue = QColor(style_content["Layout"]["LeftBottomFontColor"])
+        self.leftBottomBoldValue = style_content["Layout"]["LeftBottomBold"]
 
-        #         self.mainSpacingCard.spinBox.setValue(float(parts[13]))
-        #         self.mainOutlineSizeCard.spinBox.setValue(float(parts[16]))
-        #     elif line.startswith("Style: Secondary"):
-        #         # 解析副字幕样式
-        #         parts = line.split(",")
-        #         self.subFontCard.setCurrentText(parts[1])
-        #         self.subSizeCard.spinBox.setValue(int(parts[2]))
+        self.rightTopTypeValue = display_type_key(style_content["Layout"]["RightTopType"])
+        self.rightTopFontColorValue = QColor(style_content["Layout"]["RightTopFontColor"])
+        self.rightTopBoldValue = style_content["Layout"]["RightTopBold"]
 
-        #         self.subSpacingCard.spinBox.setValue(float(parts[13]))
-        #         self.subOutlineSizeCard.spinBox.setValue(float(parts[16]))
+        self.rightBottomTypeValue = display_type_key(style_content["Layout"]["RightBottomType"])
+        self.rightBottomFontColorValue = QColor(style_content["Layout"]["RightBottomFontColor"])
+        self.rightBottomBoldValue = style_content["Layout"]["RightBottomBold"]
 
-        # cfg.set(cfg.subtitle_style_name, style_name)
+        self.baseFontSizeValue = style_content["Layout"]["BaseFontSize"]
+        self.baseQualityValue = int(style_content["Layout"]["BaseQuality"])
 
-        # # 重置标志位
-        # self._loading_style = False
+        self.useEquivalentFocalValue = style_content["Layout"]["UseEquivalentFocal"]
+        self.useOriginRatioPaddingValue = style_content["Layout"]["UseOriginRatioPadding"]
+        self.addShadowValue = style_content["Layout"]["AddShadow"]
+        self.whiteMarginValue = style_content["Layout"]["WhiteMargin"]
+        self.whiteMarginWidthValue = int(style_content["Layout"]["WhiteMarginWidth"])
+
+        self.__setSettings()
+
+        print(f"设置指定样式000: {style_name}")
+        cfg.set(cfg.styleName, style_name)
+
+        # 重置标志位
+        self._loading_style = False
 
         # # 手动更新一次预览
         self.updatePreview()
 
         # # 显示加载成功提示
-        # InfoBar.success(
-        #     title=self.tr("成功"),
-        #     content=self.tr("已加载样式 ") + style_name,
-        #     orient=Qt.Horizontal,
-        #     isClosable=True,
-        #     position=InfoBarPosition.TOP,
-        #     duration=1500,
-        #     parent=self,
-        # )
+        InfoBar.success(
+            title=self.tr("成功"),
+            content=self.tr("已加载样式 ") + style_name,
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=1500,
+            parent=self,
+        )
 
     def createNewStyle(self):
         """创建新样式"""
@@ -565,7 +626,7 @@ class SettingInterface(QWidget):
                 return
 
             # 检查是否已存在同名样式
-            if (SUBTITLE_STYLE_PATH / f"{style_name}.txt").exists():
+            if (STYLE_PATH / f"{style_name}.json").exists():
                 InfoBar.warning(
                     title=self.tr("警告"),
                     content=self.tr("样式 ") + style_name + self.tr(" 已存在"),
@@ -597,18 +658,56 @@ class SettingInterface(QWidget):
 
     def saveStyle(self, style_name):
         """保存样式
-        Args:
-            style_name (str): 样式名称
         """
         # 确保样式目录存在
-        # SUBTITLE_STYLE_PATH.mkdir(parents=True, exist_ok=True)
+        STYLE_PATH.mkdir(parents=True, exist_ok=True)
+
+        cfg.set(cfg.leftTopType, display_type_value(self.leftTopTypeValue))
+        cfg.set(cfg.leftTopFontColor, self.leftTopFontColorValue.name())
+        cfg.set(cfg.leftTopBold, self.leftTopBoldValue)
+
+        cfg.set(cfg.leftBottomType, display_type_value(self.leftBottomTypeValue))
+        cfg.set(cfg.leftBottomFontColor, self.leftBottomFontColorValue.name())
+        cfg.set(cfg.leftBottomBold, self.leftBottomBoldValue)
+
+        cfg.set(cfg.rightTopType, display_type_value(self.rightTopTypeValue))
+        cfg.set(cfg.rightTopFontColor, self.rightTopFontColorValue.name())
+        cfg.set(cfg.rightTopBold, self.rightTopBoldValue)
+
+        cfg.set(cfg.rightBottomType, display_type_value(self.rightBottomTypeValue))
+        cfg.set(cfg.rightBottomFontColor, self.rightBottomFontColorValue.name())
+        cfg.set(cfg.rightBottomBold, self.rightBottomBoldValue)
+
+        cfg.set(cfg.baseFontSize, self.baseFontSizeValue)
+        cfg.set(cfg.baseQuality, self.baseQualityValue)
+        cfg.set(cfg.useEquivalentFocal, self.useEquivalentFocalValue)
+        cfg.set(cfg.useOriginRatioPadding, self.useOriginRatioPaddingValue)
+        cfg.set(cfg.addShadow, self.addShadowValue)
+        cfg.set(cfg.whiteMarginWidth, self.whiteMarginWidthValue)
 
         # # 生成样式内容并保存
-        # style_content = self.generateAssStyles()
-        # style_path = SUBTITLE_STYLE_PATH / f"{style_name}.txt"
+        config_dict = cfg.to_dict()
+        style_path = STYLE_PATH / f"{style_name}.json"
 
-        # with open(style_path, "w", encoding="utf-8") as f:
-        #     f.write(style_content)
+        with open(style_path, 'w', encoding='utf-8') as f:
+            json.dump(config_dict, f, indent=4)
+        
+        InfoBar.success(
+                title=self.tr("成功"),
+                content=self.tr("保存成功 ") + style_name,
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self,
+            )
+
+    def resetStyle(self):
+        self._initValues()
+        self.__setSettings()
+
+    def renderStyle(self):
+        self.updatePreview()
 
 
 class StyleNameDialog(MessageBoxBase):

@@ -1,0 +1,11 @@
+QWidget {
+    border: 1px solid rgb(29, 29, 29);
+    border-right: none;
+    border-bottom: none;
+    border-top-left-radius: 10px;
+    background-color: rgb(39, 39, 39);
+}
+
+Window {
+    background-color: rgb(32, 32, 32);
+}

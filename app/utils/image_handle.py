@@ -1,5 +1,7 @@
 
 import subprocess
+import platform
+import shutil
 import re
 
 from app.utils.logger import setup_logger
@@ -13,8 +15,15 @@ from app.entity.constants import TRANSPARENT
 
 logger = setup_logger("image_handle")
 
+
 def exiftool_command() -> Path:
-    return Path(f"{EXIFTOOL_PATH}/exiftool.exe")
+    if platform.system() == 'Windows':
+        return Path(f"{EXIFTOOL_PATH}/exiftool.exe")
+    elif shutil.which('exiftool'):
+        return Path(shutil.which('exiftool'))
+    else:
+        return Path(f"{EXIFTOOL_PATH}/exiftool")
+
 
 def get_exif(path) -> dict:
     """
@@ -25,7 +34,8 @@ def get_exif(path) -> dict:
     exif_dict = {}
     try:
         print(exiftool_command())
-        output_bytes = subprocess.check_output([exiftool_command(), '-d', '%Y-%m-%d %H:%M:%S%3f%z', path])
+        output_bytes = subprocess.check_output(
+            [exiftool_command(), '-d', '%Y-%m-%d %H:%M:%S%3f%z', path])
         output = output_bytes.decode('utf-8', errors='ignore')
 
         lines = output.splitlines()
@@ -53,6 +63,7 @@ def get_exif(path) -> dict:
 
     return exif_dict
 
+
 def extract_attribute(data_dict: dict, *keys, default_value: str = '', prefix='', suffix='') -> str:
     """
     从字典中提取对应键的属性值
@@ -67,24 +78,29 @@ def extract_attribute(data_dict: dict, *keys, default_value: str = '', prefix=''
             return data_dict[key] + suffix
     return default_value
 
+
 def get_datetime(exif) -> datetime:
     dt = datetime.now()
     try:
         dt = parser.parse(extract_attribute(exif, ExifId.DATETIME.value,
                                             default_value=str(datetime.now())))
     except ValueError as e:
-        logger.info(f'Error: 时间格式错误：{extract_attribute(exif, ExifId.DATETIME.value)}')
+        logger.info(
+            f'Error: 时间格式错误：{extract_attribute(exif, ExifId.DATETIME.value)}')
     return dt
+
 
 DEFAULT_VALUE = '--'
 PATTERN = re.compile(r"(\d+)\.")  # 匹配小数
+
 
 def get_focal_length(exif):
     focal_length = DEFAULT_VALUE
     focal_length_in_35mm_film = DEFAULT_VALUE
 
     try:
-        focal_lengths = PATTERN.findall(extract_attribute(exif, ExifId.FOCAL_LENGTH.value))
+        focal_lengths = PATTERN.findall(
+            extract_attribute(exif, ExifId.FOCAL_LENGTH.value))
         try:
             focal_length = focal_lengths[0] if focal_length else DEFAULT_VALUE
         except IndexError as e:
@@ -95,7 +111,8 @@ def get_focal_length(exif):
         except IndexError as e:
             logger.info(f'ValueError: 不存在 35mm 焦距：{focal_lengths} : {e}')
     except Exception as e:
-        logger.info(f'KeyError: 焦距转换错误：{extract_attribute(exif, ExifId.FOCAL_LENGTH.value)} : {e}')
+        logger.info(
+            f'KeyError: 焦距转换错误：{extract_attribute(exif, ExifId.FOCAL_LENGTH.value)} : {e}')
 
     return focal_length, focal_length_in_35mm_film
 
@@ -106,6 +123,8 @@ def extract_gps_info(gps_info: str):
     return extract_gps_lat_and_long(lat, long)
 
 # 提取出纬度和经度主要部分
+
+
 def extract_gps_lat_and_long(lat: str, long: str):
     lat_deg, _, lat_min = re.findall(r"(\d+ deg \d+)", lat)[0].split()
     long_deg, _, long_min = re.findall(r"(\d+ deg \d+)", long)[0].split()
@@ -148,7 +167,8 @@ def append_image_by_side(background, images, side='left', padding=200, is_start=
         for i in images:
             if i is None:
                 continue
-            i = resize_image_with_height(i, background.height, auto_close=False)
+            i = resize_image_with_height(
+                i, background.height, auto_close=False)
             x_offset -= i.width
             x_offset -= padding
             background.paste(i, (x_offset, 0))
@@ -160,10 +180,12 @@ def append_image_by_side(background, images, side='left', padding=200, is_start=
         for i in images:
             if i is None:
                 continue
-            i = resize_image_with_height(i, background.height, auto_close=False)
+            i = resize_image_with_height(
+                i, background.height, auto_close=False)
             background.paste(i, (x_offset, 0))
             x_offset += i.width
             x_offset += padding
+
 
 def resize_image_with_height(image, height, auto_close=True):
     """
@@ -243,7 +265,8 @@ def merge_images(images, axis=0, align=0):
         max_height = sum(heights)
 
     # 创建输出图像
-    output_image = Image.new('RGBA', (total_width, max_height), color=TRANSPARENT)
+    output_image = Image.new(
+        'RGBA', (total_width, max_height), color=TRANSPARENT)
 
     # 拼接图像
     x_offset, y_offset = 0, 0
@@ -298,6 +321,7 @@ def padding_image(image, padding_size, padding_location='tb', color=TRANSPARENT)
     padding_img.paste(image, (x_offset, y_offset))
     return padding_img
 
+
 def resize_image_with_width(image, width, auto_close=True):
     """
     按照宽度对图片进行缩放
@@ -321,6 +345,7 @@ def resize_image_with_width(image, width, auto_close=True):
 
     # 返回缩放后的图片对象
     return resized_image
+
 
 def square_image(image, auto_close=True) -> Image.Image:
     """
@@ -346,6 +371,7 @@ def square_image(image, auto_close=True) -> Image.Image:
     # 返回正方形图片对象
     return square_img
 
+
 def text_to_image(content, font, bold_font, is_bold=False, fill='black') -> Image.Image:
     """
     将文字内容转换为图片
@@ -359,3 +385,18 @@ def text_to_image(content, font, bold_font, is_bold=False, fill='black') -> Imag
     draw = ImageDraw.Draw(image)
     draw.text((0, 0), content, fill=fill, font=font)
     return image
+
+
+def extract_attribute(data_dict: dict, *keys, default_value: str = '', prefix='', suffix='') -> str:
+    """
+    从字典中提取对应键的属性值
+
+    :param data_dict: 包含属性值的字典
+    :param keys: 一个或多个键
+    :param default_value: 默认值，默认为空字符串
+    :return: 对应的属性值或空字符串
+    """
+    for key in keys:
+        if key in data_dict:
+            return data_dict[key] + suffix
+    return default_value

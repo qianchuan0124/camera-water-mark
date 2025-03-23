@@ -167,7 +167,7 @@ class SpinBoxSettingCard(SettingCard):
         self.spinBox = CompactSpinBox(self)
         self.spinBox.setRange(minimum, maximum)
         self.spinBox.setMinimumWidth(60)
-        self.spinBox.setSingleStep(2)  # 设置步长为2
+        self.spinBox.setSingleStep(1)  # 设置步长为2
 
         # 添加到布局
         self.hBoxLayout.addWidget(self.spinBox, 0, Qt.AlignRight)

@@ -10,6 +10,8 @@ build
 dist
 logs
 .watermark
+.venv
+.history
 
 # 应用数据
 /AppData/
@@ -19,3 +21,4 @@ logs
 /build/
 /dist/
 /app/resource/bin/
+/resource/style/
