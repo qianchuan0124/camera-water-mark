@@ -1,0 +1,43 @@
+{
+    "Global": {
+        "AddShadow": false,
+        "UseEquivalentFocal": true,
+        "UseOriginRatioPadding": false,
+        "WhiteMargin": true,
+        "WhiteMarginWidth": 3
+    },
+    "Base": {
+        "BackgroundColor": "#ffffff",
+        "BaseFontSize": 1,
+        "BaseQuality": 100,
+        "BoldFontSize": 1
+    },
+    "LOGO": {
+        "isLogoLeft": true,
+        "LogoEnable": true
+    },
+    "Layout": {
+        "LeftBottomBold": false,
+        "LeftBottomFontColor": "#757575",
+        "LeftBottomType": "Model",
+        "LeftTopBold": true,
+        "LeftTopFontColor": "#212121",
+        "LeftTopType": "LensModel",
+        "RightBottomBold": false,
+        "RightBottomFontColor": "#757575",
+        "RightBottomType": "Param",
+        "RightTopBold": true,
+        "RightTopFontColor": "#212121",
+        "RightTopType": "Datetime"
+    },
+    "Mode": {
+        "MarkMode": "standard"
+    },
+    "Style": {
+        "StyleName": "default"
+    },
+    "QFluentWidgets": {
+        "ThemeColor": "#ff009faa",
+        "ThemeMode": "Dark"
+    }
+}

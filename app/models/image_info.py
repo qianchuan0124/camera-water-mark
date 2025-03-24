@@ -26,6 +26,12 @@ class ImageInfo(object):
     def logo(self) -> str:
         return extract_attribute(
             self.exif, ExifId.CAMERA_MAKE.value)
+    
+    def make(self) -> str:
+        return extract_attribute(self.exif, ExifId.CAMERA_MAKE.value)
+    
+    def model(self) -> str:
+        return extract_attribute(self.exif, ExifId.CAMERA_MODEL.value)
 
     def parse_exif_info(self, type: str) -> str:
         if type == "Model":

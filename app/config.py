@@ -70,6 +70,52 @@ LOGO_PATH = {
     "SONY": Path(f"{RESOURCE_PATH}/logos/sony.png"),
 }
 
+class LOGO_LAYOUT(Enum):
+    LEFT = "LOGO居左"
+    RIGHT = "LOGO居右"
+
+    def get_enum(value):
+        for member in LOGO_LAYOUT:
+            if member.value == value:
+                return member
+        return LOGO_LAYOUT.LEFT
+    
+    def isLeft(self):
+        return self == LOGO_LAYOUT.LEFT
+    
+    def all_values():
+        values = [member.value for member in LOGO_LAYOUT]
+        return values
+    
+class MARK_MODE(Enum):
+    STANDARD = "标准模式"
+    SIMPLE = "简易模式"
+
+    def get_enum(value):
+        for member in MARK_MODE:
+            if member.value == value:
+                return member
+        return MARK_MODE.STANDARD
+
+    def info(self):
+        if self == MARK_MODE.SIMPLE:
+            return "simple"
+        else:
+            return "standard"
+
+    def key(value):
+        if value == "simple":
+            return MARK_MODE.SIMPLE
+        else:
+            return MARK_MODE.STANDARD
+        
+    def all_values():
+        values = [member.value for member in MARK_MODE]
+        return values
+    
+    def isSimple(self):
+        return self == MARK_MODE.SIMPLE
+
 
 class Config(QConfig):
     styleName = ConfigItem("Style", "StyleName", "default")
@@ -78,6 +124,8 @@ class Config(QConfig):
     baseFontSize = ConfigItem("Base", "BaseFontSize", 1)
     boldFontSize = ConfigItem("Base", "BoldFontSize", 1)
     backgroundColor = ConfigItem("Base", "BackgroundColor", "#ffffff")
+
+    markMode = ConfigItem("Mode", "MarkMode", "standard")
 
     useEquivalentFocal = ConfigItem("Global", "UseEquivalentFocal", True)
     useOriginRatioPadding = ConfigItem(

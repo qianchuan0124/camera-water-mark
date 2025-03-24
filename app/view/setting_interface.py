@@ -2,12 +2,11 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional, Tuple
 import json
 
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from PyQt5.QtGui import QColor, QFontDatabase
-from PyQt5.QtWidgets import QFileDialog, QHBoxLayout, QVBoxLayout, QWidget
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CardWidget, PrimaryPushButton
 from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
@@ -24,12 +23,11 @@ from qfluentwidgets import (
 from app.config import cfg, STYLE_PATH
 from app.components.common_card import (
     ComboBoxSettingCard,
-    DoubleSpinBoxSettingCard,
     SpinBoxSettingCard,
     ColorSettingCard,
     SwitchSettingCard
 )
-from app.config import ASSETS_PATH, CACHE_PATH
+from app.config import ASSETS_PATH, CACHE_PATH, LOGO_LAYOUT, MARK_MODE
 from app.utils.mater_mark_preview import generate_preview
 from app.entity.constants import DISPLAY_TYPE, display_type_key, display_type_value
 from app.thread.image_handle_thread import ImageHandleTask, ImageHandleThread, HandleProgress, ImageHandleStatus
@@ -78,12 +76,19 @@ class SettingInterface(QWidget):
         self.baseFontSizeValue = cfg.baseFontSize.value
         self.baseQualityValue = cfg.baseQuality.value
 
+        # 模式选择
+        self.modeValue = MARK_MODE.key(cfg.markMode.value)
+
         # 全局样式
         self.useEquivalentFocalValue = cfg.useEquivalentFocal.value
         self.useOriginRatioPaddingValue = cfg.useOriginRatioPadding.value
         self.addShadowValue = cfg.addShadow.value
         self.whiteMarginValue = cfg.whiteMargin.value
         self.whiteMarginWidthValue = cfg.whiteMarginWidth.value
+
+        # LOGO样式
+        self.logoEnableValue = cfg.logoEnable.value
+        self.logoLayoutValue = LOGO_LAYOUT.LEFT if cfg.isLogoLeft else LOGO_LAYOUT.RIGHT
 
         # 布局样式
         self.leftTopTypeValue = display_type_key(cfg.leftTopType.value)
@@ -113,7 +118,9 @@ class SettingInterface(QWidget):
 
         # 创建设置组
         self.baseGroup = SettingCardGroup(self.tr("基础"), self.settingsWidget)
+        self.modeGroup = SettingCardGroup(self.tr("模式"), self.settingsWidget)
         self.globalGroup = SettingCardGroup(self.tr("全局"), self.settingsWidget)
+        self.logoGroup = SettingCardGroup(self.tr("LOGO"), self.settingsWidget)
         self.layoutGroup = SettingCardGroup(self.tr("布局"), self.settingsWidget)
 
     def _initPreviewArea(self):
@@ -163,9 +170,7 @@ class SettingInterface(QWidget):
         self.previewSettingLayout = QHBoxLayout(self.previewSettingWidget)
 
         self.saveButton = PrimaryPushButton(self.tr("保存"), self, icon=FIF.SAVE)
-        self.saveButton.clicked.connect(
-            lambda: self.saveStyle(cfg.styleName.value)
-        )
+        self.saveButton.clicked.connect(self.on_save_button_tapped)
         self.saveButton.setFixedHeight(34)
 
         self.resetButton = PrimaryPushButton(
@@ -209,6 +214,14 @@ class SettingInterface(QWidget):
             self.tr("设置基础字号"),
             minimum=1,
             maximum=3,
+        )
+
+        # 模式
+        self.markMode = ComboBoxSettingCard(
+            FIF.MORE,
+            self.tr("布局模式"),
+            self.tr("设置布局模式"),
+            texts=MARK_MODE.all_values(),
         )
 
         # 全局样式
@@ -265,6 +278,22 @@ class SettingInterface(QWidget):
             self.tr("设置白色边框宽度"),
             minimum=1,
             maximum=100,
+        )
+
+        # LOGO样式
+        self.logoEnable = SwitchSettingCard(
+            FIF.LAYOUT,
+            self.tr("展示LOGO"),
+            self.tr("是否展示LOGO"),
+            None,
+            self.logoGroup
+        )
+
+        self.logoLayout = ComboBoxSettingCard(
+            FIF.LAYOUT,
+            self.tr("LOGO布局"),
+            self.tr("设置LOGO布局样式"),
+            texts=LOGO_LAYOUT.all_values(),
         )
 
         # 布局样式
@@ -378,6 +407,13 @@ class SettingInterface(QWidget):
         self.baseGroup.addSettingCard(self.baseFontSize)
         self.baseGroup.addSettingCard(self.baseQuality)
 
+        # 模式
+        self.modeGroup.addSettingCard(self.markMode)
+
+        # LOGO样式
+        self.logoGroup.addSettingCard(self.logoEnable)
+        self.logoGroup.addSettingCard(self.logoLayout)
+
         # 全局样式
         self.globalGroup.addSettingCard(self.useEquivalentFocal)
         self.globalGroup.addSettingCard(self.useOriginRatioPadding)
@@ -401,7 +437,9 @@ class SettingInterface(QWidget):
 
         # 添加组到布局
         self.settingsLayout.addWidget(self.baseGroup)
+        self.settingsLayout.addWidget(self.modeGroup)
         self.settingsLayout.addWidget(self.globalGroup)
+        self.settingsLayout.addWidget(self.logoGroup)
         self.settingsLayout.addWidget(self.layoutGroup)
         self.settingsLayout.addStretch(1)
 
@@ -432,12 +470,19 @@ class SettingInterface(QWidget):
         self.baseQuality.setValue(self.baseQualityValue)
         self.baseFontSize.setValue(self.baseFontSizeValue)
 
+        # 模式
+        self.markMode.comboBox.setCurrentText(self.modeValue.value)
+
         # 全局样式
         self.useEquivalentFocal.setValue(self.useEquivalentFocalValue)
         self.useOriginRatioPadding.setValue(self.useOriginRatioPaddingValue)
         self.addShadow.setValue(self.addShadowValue)
         self.whiteMargin.setValue(self.whiteMarginValue)
         self.whiteMarginWidth.setValue(self.whiteMarginWidthValue)
+
+        # LOGO样式
+        self.logoEnable.setValue(self.logoEnableValue)
+        self.logoLayout.comboBox.setCurrentText(self.logoLayoutValue.value)
 
         # 布局样式
         self.leftTopType.comboBox.setCurrentText(
@@ -459,6 +504,32 @@ class SettingInterface(QWidget):
             self.rightBottomTypeValue)
         self.rightBottomColor.setColor(self.rightBottomFontColorValue)
         self.rightBottomBold.setValue(self.rightBottomBoldValue)
+
+        self.__setInitHiddens()
+
+    def __setInitHiddens(self):
+        self.logoEnable.setHidden(self.modeValue.isSimple())
+        self.logoLayout.setHidden(True if self.modeValue.isSimple() else not self.logoEnable)
+
+        self.logoGroup.setHidden(self.modeValue.isSimple())
+        self.layoutGroup.setHidden(self.modeValue.isSimple())
+
+        # self.leftTopType.setHidden(self.modeValue.isSimple())
+        # self.leftTopColor.setHidden(self.modeValue.isSimple())
+        # self.leftTopBold.setHidden(self.modeValue.isSimple())
+
+        # self.leftBottomType.setHidden(self.modeValue.isSimple())
+        # self.leftBottomColor.setHidden(self.modeValue.isSimple())
+        # self.leftBottomBold.setHidden(self.modeValue.isSimple()) 
+
+        # self.rightTopType.setHidden(self.modeValue.isSimple())
+        # self.rightTopColor.setHidden(self.modeValue.isSimple())
+        # self.rightTopBold.setHidden(self.modeValue.isSimple())
+
+        # self.rightBottomType.setHidden(self.modeValue.isSimple())
+        # self.rightBottomColor.setHidden(self.modeValue.isSimple())
+        # self.rightBottomBold.setHidden(self.modeValue.isSimple())
+            
 
     def __setValues(self):
         """设置初始值"""
@@ -507,6 +578,9 @@ class SettingInterface(QWidget):
             lambda text: setattr(self, "baseFontSizeValue", text))
         self.baseQuality.valueChanged.connect(
             lambda text: setattr(self, "baseQualityValue", text))
+        
+        # 模式
+        self.markMode.currentTextChanged.connect(self.on_mark_mode_change)
 
         # 全局样式
         self.whiteMarginWidth.valueChanged.connect(
@@ -519,6 +593,11 @@ class SettingInterface(QWidget):
             lambda text: setattr(self, "addShadowValue", text))
         self.whiteMargin.checkedChanged.connect(
             lambda text: setattr(self, "whiteMarginValue", text))
+        
+        # LOGO样式
+
+        self.logoEnable.checkedChanged.connect(self.onLogoEnableChanged)
+        self.logoLayout.currentTextChanged.connect(lambda text: setattr(self, "logoLayoutValue", LOGO_LAYOUT.get_enum(text)))
 
         # 布局样式
 
@@ -559,6 +638,27 @@ class SettingInterface(QWidget):
         self.newStyleButton.clicked.connect(self.createNewStyle)
         self.openStyleFolderButton.clicked.connect(
             self.on_open_style_folder_clicked)
+        
+    def on_mark_mode_change(self):
+        self.modeValue = MARK_MODE.get_enum(self.markMode.comboBox.text())
+        self.__setInitHiddens()
+        
+    def onLogoEnableChanged(self, logoEnable):
+        self.logoEnableValue = logoEnable
+        self.logoLayout.setHidden(not self.logoEnableValue)
+
+    def on_save_button_tapped(self):
+        self.saveStyle(cfg.styleName.value)
+        InfoBar.success(
+            title=self.tr("成功"),
+            content=self.tr("保存成功 ") + cfg.styleName.value,
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=2000,
+            parent=self,
+        )
+            
 
     def on_open_style_folder_clicked(self):
         """打开样式文件夹"""
@@ -641,6 +741,9 @@ class SettingInterface(QWidget):
         self.baseQualityValue = int(style_content["Base"]["BaseQuality"])
         self.baseBackgroundValue = QColor(
             style_content["Base"]["BackgroundColor"])
+        
+        # 模式
+        self.modeValue = MARK_MODE.key(style_content["Mode"]["MarkMode"])
 
         # 全局样式
         self.useEquivalentFocalValue = style_content["Global"]["UseEquivalentFocal"]
@@ -649,6 +752,10 @@ class SettingInterface(QWidget):
         self.whiteMarginValue = style_content["Global"]["WhiteMargin"]
         self.whiteMarginWidthValue = int(
             style_content["Global"]["WhiteMarginWidth"])
+        
+        # LOGO布局
+        self.logoEnableValue = style_content["LOGO"]["LogoEnable"]
+        self.logoLayoutValue = LOGO_LAYOUT.LEFT if style_content["LOGO"]["isLogoLeft"] else LOGO_LAYOUT.RIGHT
 
         # 布局样式
         self.leftTopTypeValue = display_type_key(
@@ -683,6 +790,7 @@ class SettingInterface(QWidget):
         self._loading_style = False
 
         # # 手动更新一次预览
+        self.saveStyle(style_name)
         self.updatePreview()
 
         # # 显示加载成功提示
@@ -746,11 +854,18 @@ class SettingInterface(QWidget):
         cfg.set(cfg.baseFontSize, self.baseFontSizeValue)
         cfg.set(cfg.baseQuality, self.baseQualityValue)
 
+        # 模式
+        cfg.set(cfg.markMode, self.modeValue.info())
+
         # 全局样式
         cfg.set(cfg.useEquivalentFocal, self.useEquivalentFocalValue)
         cfg.set(cfg.useOriginRatioPadding, self.useOriginRatioPaddingValue)
         cfg.set(cfg.addShadow, self.addShadowValue)
         cfg.set(cfg.whiteMarginWidth, self.whiteMarginWidthValue)
+
+        # LOGO布局
+        cfg.set(cfg.logoEnable, self.logoEnableValue)
+        cfg.set(cfg.isLogoLeft, self.logoLayoutValue.isLeft())
 
         # 布局样式
         cfg.set(cfg.leftTopType, display_type_value(self.leftTopTypeValue))
@@ -778,16 +893,6 @@ class SettingInterface(QWidget):
 
         with open(style_path, 'w', encoding='utf-8') as f:
             json.dump(config_dict, f, indent=4)
-
-        InfoBar.success(
-            title=self.tr("成功"),
-            content=self.tr("保存成功 ") + style_name,
-            orient=Qt.Horizontal,
-            isClosable=True,
-            position=InfoBarPosition.TOP,
-            duration=2000,
-            parent=self,
-        )
 
     def resetStyle(self):
         self._initValues()

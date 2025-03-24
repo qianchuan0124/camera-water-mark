@@ -3,12 +3,20 @@ from typing import List
 from pathlib import Path
 from PyQt5.QtCore import QThread, pyqtSignal
 from dataclasses import dataclass
-from app.config import cfg, LOGO_PATH
+from app.config import cfg, LOGO_PATH, MARK_MODE
 from PIL import Image, ImageOps
 from PIL.Image import Transpose
 from app.models.image_info import ImageInfo
 from app.entity.exif_id import ExifId
-from app.utils.image_handle import text_to_image, concatenate_image, padding_image, append_image_by_side, resize_image_with_width
+from app.utils.image_handle import (
+    text_to_image, 
+    concatenate_image, 
+    padding_image, 
+    append_image_by_side, 
+    resize_image_with_width, 
+    merge_images, 
+    resize_image_with_height
+)
 from app.models.image_config import get_font, get_bold_font
 
 from app.utils.logger import setup_logger
@@ -20,6 +28,10 @@ TRANSPARENT = (0, 0, 0, 0)
 GRAY = '#CBCBC9'
 LINE_TRANSPARENT = Image.new('RGBA', (20, 1000), color=TRANSPARENT)
 LINE_GRAY = Image.new('RGBA', (20, 1000), color=GRAY)
+SMALL_VERTICAL_GAP = Image.new('RGBA', (20, 50), color=TRANSPARENT)
+MIDDLE_VERTICAL_GAP = Image.new('RGBA', (20, 100), color=TRANSPARENT)
+MIDDLE_HORIZONTAL_GAP = Image.new('RGBA', (100, 20), color=TRANSPARENT)
+LARGE_HORIZONTAL_GAP = Image.new('RGBA', (200, 20), color=TRANSPARENT)
 
 
 class ImageHandleStatus(Enum):
@@ -122,6 +134,52 @@ class ImageHandleThread(QThread):
         self.finished.emit(HandleProgress(self.tasks, 100))
 
     def hanle_task(self, image_info: ImageInfo):
+        model: MARK_MODE = MARK_MODE.key(cfg.markMode.value)
+        if model == MARK_MODE.SIMPLE:
+            self.simple_mode(image_info)
+        else:
+            self.standard_mode(image_info)
+
+    def simple_mode(self, image_info: ImageInfo):
+        ratio = .16 if self.get_ratio() >= 1 else .1
+        padding_ratio = .5 if self.get_ratio() >= 1 else .5
+
+        first_text = text_to_image('Shot on',
+                                    get_font(),
+                                    get_bold_font(),
+                                    is_bold=False,
+                                    fill='#212121')
+        model = text_to_image(image_info.model().replace(r'/', ' ').replace(r'_', ' '),
+                                get_font(),
+                                get_bold_font(),
+                                is_bold=True,
+                                fill='#D32F2F')
+        make = text_to_image(image_info.make().split(' ')[0],
+                                get_font(),
+                                get_bold_font(),
+                                is_bold=True,
+                                fill='#212121')
+        first_line = merge_images([first_text, MIDDLE_HORIZONTAL_GAP, model, MIDDLE_HORIZONTAL_GAP, make], 0, 1)
+        second_line_text = image_info.get_param_str()
+        second_line = text_to_image(second_line_text,
+                                    get_font(),
+                                    get_bold_font(),
+                                    is_bold=False,
+                                    fill='#9E9E9E')
+        image = merge_images([first_line, MIDDLE_VERTICAL_GAP, second_line], 1, 0)
+        height = self.get_height() * ratio * padding_ratio
+        image = resize_image_with_height(image, int(height))
+        horizontal_padding = int((self.get_width() - image.width) / 2)
+        vertical_padding = int((self.get_height() * ratio - image.height) / 2)
+
+        watermark = ImageOps.expand(image, (horizontal_padding, vertical_padding), fill=TRANSPARENT)
+        bg = Image.new('RGBA', watermark.size, color='white')
+        bg = Image.alpha_composite(bg, watermark)
+
+        watermark_img = merge_images([self.get_watermark_img(), bg], 1, 1)
+        self.update_watermark_img(watermark_img)
+
+    def standard_mode(self, image_info: ImageInfo):
         self.bg_color = cfg.backgroundColor.value
 
         # 下方水印的占比
