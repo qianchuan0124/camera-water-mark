@@ -14,6 +14,8 @@ from app.config import OUTPUT_PATH, SupportedImageFormats
 from app.models.picutre_model import PictureItem
 from app.components.common_item import TapButton, SearchInput
 from app.view.log_window import LogWindow
+from app.utils.logger import setup_logger
+logger = setup_logger("home")
 
 # 打开文件夹，选中多张图片，形成表格
 
@@ -180,7 +182,7 @@ class HomeInterface(QWidget):
                         name=os.path.basename(file_path),
                         original_path=file_path,
                         target_path=OUTPUT_PATH,
-                        status="incomplete"
+                        status=ImageHandleStatus.WAITING
                     ))
             if has_added:
                 self._populate_model_table()
@@ -325,9 +327,9 @@ class HomeInterface(QWidget):
             elif system_platform == "Linux":
                 subprocess.run(["xdg-open", folder_path], check=True)
             else:
-                print(f"不支持的操作系统: {system_platform}")
+                logger.error(f"不支持的操作系统: {system_platform}")
         except Exception as e:
-            print(f"打开文件夹失败: {e}")
+            logger.error(f"打开文件夹失败: {e}")
 
     def _delete_model(self, row):
         """删除模型"""
@@ -390,6 +392,7 @@ class HomeInterface(QWidget):
         self.progress_bar.setValue(progress.progress)
         self.status_label.setText("处理完成")
         self._populate_model_table()
+        self.open_folder(self.target_path)
         InfoBar.success(
             self.tr("成功"),
             self.tr("照片处理已完成"),

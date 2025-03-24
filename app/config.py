@@ -73,6 +73,22 @@ LOGO_PATH = {
 
 class Config(QConfig):
     styleName = ConfigItem("Style", "StyleName", "default")
+
+    baseQuality = ConfigItem("Base", "BaseQuality", 100)
+    baseFontSize = ConfigItem("Base", "BaseFontSize", 1)
+    boldFontSize = ConfigItem("Base", "BoldFontSize", 1)
+    backgroundColor = ConfigItem("Base", "BackgroundColor", "#ffffff")
+
+    useEquivalentFocal = ConfigItem("Global", "UseEquivalentFocal", True)
+    useOriginRatioPadding = ConfigItem(
+        "Global", "UseOriginRatioPadding", False)
+    addShadow = ConfigItem("Global", "AddShadow", False)
+    whiteMargin = ConfigItem("Global", "WhiteMargin", True)
+    whiteMarginWidth = ConfigItem("Global", "WhiteMarginWidth", 3)
+
+    logoEnable = ConfigItem("LOGO", "LogoEnable", True)
+    isLogoLeft = ConfigItem("LOGO", "isLogoLeft", True)
+
     leftTopType = ConfigItem("Layout", "LeftTopType", "LensModel")
     leftTopBold = ConfigItem("Layout", "LeftTopBold", True)
     leftTopFontColor = ConfigItem("Layout", "LeftTopFontColor", "#212121")
@@ -90,22 +106,6 @@ class Config(QConfig):
     rightBottomBold = ConfigItem("Layout", "RightBottomBold", False)
     rightBottomFontColor = ConfigItem(
         "Layout", "RightBottomFontColor", "#757575")
-
-    baseQuality = ConfigItem("Layout", "BaseQuality", 100)
-    baseFontSize = ConfigItem("Layout", "BaseFontSize", 1)
-    boldFontSize = ConfigItem("Layout", "BoldFontSize", 1)
-
-    useEquivalentFocal = ConfigItem("Layout", "UseEquivalentFocal", True)
-    useOriginRatioPadding = ConfigItem(
-        "Layout", "UseOriginRatioPadding", False)
-    addShadow = ConfigItem("Layout", "AddShadow", False)
-    whiteMargin = ConfigItem("Layout", "WhiteMargin", True)
-    whiteMarginWidth = ConfigItem("Layout", "WhiteMarginWidth", 3)
-    layoutType = ConfigItem("Layout", "LayoutType", "watermark_left_logo")
-
-    backgroundColor = ConfigItem("Layout", "BackgroundColor", "#ffffff")
-    logoEnable = ConfigItem("Layout", "LogoEnable", True)
-    isLogoLeft = ConfigItem("Layout", "isLogoLeft", True)
 
     def get_font_padding_level(self):
         bold_font_size = self.boldFontSize.value if 1 <= self.boldFontSize.value <= 3 else 1

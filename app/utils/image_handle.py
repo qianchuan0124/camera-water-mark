@@ -33,7 +33,6 @@ def get_exif(path) -> dict:
     """
     exif_dict = {}
     try:
-        print(exiftool_command())
         output_bytes = subprocess.check_output(
             [exiftool_command(), '-d', '%Y-%m-%d %H:%M:%S%3f%z', path])
         output = output_bytes.decode('utf-8', errors='ignore')

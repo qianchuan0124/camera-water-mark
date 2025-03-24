@@ -33,6 +33,7 @@ from app.config import ASSETS_PATH, CACHE_PATH
 from app.utils.mater_mark_preview import generate_preview
 from app.entity.constants import DISPLAY_TYPE, display_type_key, display_type_value
 from app.thread.image_handle_thread import ImageHandleTask, ImageHandleThread, HandleProgress, ImageHandleStatus
+from app.components.common_item import LoadingButton
 
 DEFAULT_BG = {
     "path": ASSETS_PATH / "default_bg.jpg",
@@ -70,6 +71,21 @@ class SettingInterface(QWidget):
         self.connectSignals()
 
     def _initValues(self):
+        # 读取样式信息
+
+        # 基础样式
+        self.baseBackgroundValue = QColor(cfg.backgroundColor.value)
+        self.baseFontSizeValue = cfg.baseFontSize.value
+        self.baseQualityValue = cfg.baseQuality.value
+
+        # 全局样式
+        self.useEquivalentFocalValue = cfg.useEquivalentFocal.value
+        self.useOriginRatioPaddingValue = cfg.useOriginRatioPadding.value
+        self.addShadowValue = cfg.addShadow.value
+        self.whiteMarginValue = cfg.whiteMargin.value
+        self.whiteMarginWidthValue = cfg.whiteMarginWidth.value
+
+        # 布局样式
         self.leftTopTypeValue = display_type_key(cfg.leftTopType.value)
         self.leftTopFontColorValue = QColor(cfg.leftTopFontColor.value)
         self.leftTopBoldValue = cfg.leftTopBold.value
@@ -85,15 +101,6 @@ class SettingInterface(QWidget):
         self.rightBottomTypeValue = display_type_key(cfg.rightBottomType.value)
         self.rightBottomFontColorValue = QColor(cfg.rightBottomFontColor.value)
         self.rightBottomBoldValue = cfg.rightBottomBold.value
-
-        self.baseFontSizeValue = cfg.baseFontSize.value
-        self.baseQualityValue = cfg.baseQuality.value
-        print(f"等效间距: {cfg.useEquivalentFocal.value}")
-        self.useEquivalentFocalValue = cfg.useEquivalentFocal.value
-        self.useOriginRatioPaddingValue = cfg.useOriginRatioPadding.value
-        self.addShadowValue = cfg.addShadow.value
-        self.whiteMarginValue = cfg.whiteMargin.value
-        self.whiteMarginWidthValue = cfg.whiteMarginWidth.value
 
     def _initSettingsArea(self):
         """初始化左侧设置区域"""
@@ -168,8 +175,7 @@ class SettingInterface(QWidget):
         )
         self.resetButton.setFixedHeight(34)
 
-        self.renderButton = PrimaryPushButton(
-            self.tr("渲染"), self, icon=FIF.CAMERA)
+        self.renderButton = LoadingButton(icon=FIF.CAMERA, text=self.tr("渲染"))
         self.renderButton.clicked.connect(
             lambda: self.renderStyle()
         )
@@ -186,6 +192,83 @@ class SettingInterface(QWidget):
 
     def _initSettingCards(self):
         """初始化所有设置卡片"""
+        # 基础样式
+
+        # 背景颜色
+        self.baseBackground = ColorSettingCard(
+            self.baseBackgroundValue,
+            FIF.PALETTE,
+            self.tr("背景颜色"),
+            self.tr("设置照片背景颜色"),
+        )
+
+        # 字体大小
+        self.baseFontSize = SpinBoxSettingCard(
+            FIF.FONT_SIZE,
+            self.tr("基础字号"),
+            self.tr("设置基础字号"),
+            minimum=1,
+            maximum=3,
+        )
+
+        # 全局样式
+
+        # 渲染质量
+        self.baseQuality = SpinBoxSettingCard(
+            FIF.ZOOM,
+            self.tr("基础质量"),
+            self.tr("设置基础质量"),
+            minimum=1,
+            maximum=100,
+        )
+
+        # 使用等效聚焦
+        self.useEquivalentFocal = SwitchSettingCard(
+            FIF.PIN,
+            self.tr("使用等效焦距"),
+            self.tr("是否使用等效焦距"),
+            None,
+            self.globalGroup
+        )
+
+        # 使用原始比例填充
+        self.useOriginRatioPadding = SwitchSettingCard(
+            FIF.ALBUM,
+            self.tr("使用原始比例填充"),
+            self.tr("是否使用原始比例填充"),
+            None,
+            self.globalGroup
+        )
+
+        # 添加阴影
+        self.addShadow = SwitchSettingCard(
+            FIF.LEAF,
+            self.tr("添加阴影"),
+            self.tr("是否添加阴影"),
+            None,
+            self.globalGroup
+        )
+
+        # 添加白色边框
+        self.whiteMargin = SwitchSettingCard(
+            FIF.COPY,
+            self.tr("白色边框"),
+            self.tr("是否添加白色边框"),
+            None,
+            self.globalGroup
+        )
+
+        # 白色边框宽度
+        self.whiteMarginWidth = SpinBoxSettingCard(
+            FIF.COPY,
+            self.tr("白色边框宽度"),
+            self.tr("设置白色边框宽度"),
+            minimum=1,
+            maximum=100,
+        )
+
+        # 布局样式
+
         # 左上角类型
         self.leftTopType = ComboBoxSettingCard(
             FIF.VIEW,
@@ -286,72 +369,23 @@ class SettingInterface(QWidget):
             self.layoutGroup
         )
 
-        # 字体大小
-        self.baseFontSize = SpinBoxSettingCard(
-            FIF.FONT_SIZE,
-            self.tr("基础字号"),
-            self.tr("设置基础字号"),
-            minimum=1,
-            maximum=3,
-        )
-
-        # 渲染质量
-        self.baseQuality = SpinBoxSettingCard(
-            FIF.ZOOM,
-            self.tr("基础质量"),
-            self.tr("设置基础质量"),
-            minimum=1,
-            maximum=100,
-        )
-
-        # 使用等效聚焦
-        self.useEquivalentFocal = SwitchSettingCard(
-            FIF.PIN,
-            self.tr("使用等效焦距"),
-            self.tr("是否使用等效焦距"),
-            None,
-            self.globalGroup
-        )
-
-        # 使用原始比例填充
-        self.useOriginRatioPadding = SwitchSettingCard(
-            FIF.ALBUM,
-            self.tr("使用原始比例填充"),
-            self.tr("是否使用原始比例填充"),
-            None,
-            self.globalGroup
-        )
-
-        # 添加阴影
-        self.addShadow = SwitchSettingCard(
-            FIF.LEAF,
-            self.tr("添加阴影"),
-            self.tr("是否添加阴影"),
-            None,
-            self.globalGroup
-        )
-
-        # 添加白色边框
-        self.whiteMargin = SwitchSettingCard(
-            FIF.COPY,
-            self.tr("白色边框"),
-            self.tr("是否添加白色边框"),
-            None,
-            self.globalGroup
-        )
-
-        # 白色边框宽度
-        self.whiteMarginWidth = SpinBoxSettingCard(
-            FIF.COPY,
-            self.tr("白色边框宽度"),
-            self.tr("设置白色边框宽度"),
-            minimum=1,
-            maximum=100,
-        )
-
     def _initLayout(self):
         """初始化布局"""
         # 添加卡片到组
+
+        # 基础样式
+        self.baseGroup.addSettingCard(self.baseBackground)
+        self.baseGroup.addSettingCard(self.baseFontSize)
+        self.baseGroup.addSettingCard(self.baseQuality)
+
+        # 全局样式
+        self.globalGroup.addSettingCard(self.useEquivalentFocal)
+        self.globalGroup.addSettingCard(self.useOriginRatioPadding)
+        self.globalGroup.addSettingCard(self.addShadow)
+        self.globalGroup.addSettingCard(self.whiteMargin)
+        self.globalGroup.addSettingCard(self.whiteMarginWidth)
+
+        # 布局样式
         self.layoutGroup.addSettingCard(self.leftTopType)
         self.layoutGroup.addSettingCard(self.leftTopColor)
         self.layoutGroup.addSettingCard(self.leftTopBold)
@@ -364,15 +398,6 @@ class SettingInterface(QWidget):
         self.layoutGroup.addSettingCard(self.rightBottomType)
         self.layoutGroup.addSettingCard(self.rightBottomColor)
         self.layoutGroup.addSettingCard(self.rightBottomBold)
-
-        self.baseGroup.addSettingCard(self.baseFontSize)
-        self.baseGroup.addSettingCard(self.baseQuality)
-
-        self.globalGroup.addSettingCard(self.useEquivalentFocal)
-        self.globalGroup.addSettingCard(self.useOriginRatioPadding)
-        self.globalGroup.addSettingCard(self.addShadow)
-        self.globalGroup.addSettingCard(self.whiteMargin)
-        self.globalGroup.addSettingCard(self.whiteMarginWidth)
 
         # 添加组到布局
         self.settingsLayout.addWidget(self.baseGroup)
@@ -400,6 +425,21 @@ class SettingInterface(QWidget):
         )
 
     def __setSettings(self):
+        # 设置样式到UI上
+
+        # 基础样式
+        self.baseBackground.setColor(self.baseBackgroundValue)
+        self.baseQuality.setValue(self.baseQualityValue)
+        self.baseFontSize.setValue(self.baseFontSizeValue)
+
+        # 全局样式
+        self.useEquivalentFocal.setValue(self.useEquivalentFocalValue)
+        self.useOriginRatioPadding.setValue(self.useOriginRatioPaddingValue)
+        self.addShadow.setValue(self.addShadowValue)
+        self.whiteMargin.setValue(self.whiteMarginValue)
+        self.whiteMarginWidth.setValue(self.whiteMarginWidthValue)
+
+        # 布局样式
         self.leftTopType.comboBox.setCurrentText(
             self.leftTopTypeValue)
         self.leftTopColor.setColor(self.leftTopFontColorValue)
@@ -409,25 +449,16 @@ class SettingInterface(QWidget):
             self.leftBottomTypeValue)
         self.leftBottomColor.setColor(self.leftBottomFontColorValue)
         self.leftBottomBold.setValue(self.leftBottomBoldValue)
-        
+
         self.rightTopType.comboBox.setCurrentText(
             self.rightTopTypeValue)
         self.rightTopColor.setColor(self.rightTopFontColorValue)
         self.rightTopBold.setValue(self.rightTopBoldValue)
-        
+
         self.rightBottomType.comboBox.setCurrentText(
             self.rightBottomTypeValue)
         self.rightBottomColor.setColor(self.rightBottomFontColorValue)
         self.rightBottomBold.setValue(self.rightBottomBoldValue)
-
-        self.baseQuality.setValue(int(self.baseQualityValue))
-        self.baseFontSize.setValue(int(self.baseFontSizeValue))
-
-        self.useEquivalentFocal.setValue(self.useEquivalentFocalValue)
-        self.useOriginRatioPadding.setValue(self.useOriginRatioPaddingValue)
-        self.addShadow.setValue(self.addShadowValue)
-        self.whiteMargin.setValue(self.whiteMarginValue)
-        self.whiteMarginWidth.setValue(int(self.whiteMarginWidthValue))
 
     def __setValues(self):
         """设置初始值"""
@@ -467,33 +498,61 @@ class SettingInterface(QWidget):
 
     def connectSignals(self):
         """连接所有设置变更的信号到预览更新函数"""
+        # 监听UI上的改变，绑定到样式数据上
+
+        # 基础样式
+        self.baseBackground.colorChanged.connect(
+            lambda text: setattr(self, "baseBackgroundValue", text))
+        self.baseFontSize.valueChanged.connect(
+            lambda text: setattr(self, "baseFontSizeValue", text))
+        self.baseQuality.valueChanged.connect(
+            lambda text: setattr(self, "baseQualityValue", text))
+
+        # 全局样式
+        self.whiteMarginWidth.valueChanged.connect(
+            lambda text: setattr(self, "whiteMarginWidthValue", text))
+        self.useEquivalentFocal.checkedChanged.connect(
+            lambda text: setattr(self, "useEquivalentFocalValue", text))
+        self.useOriginRatioPadding.checkedChanged.connect(
+            lambda text: setattr(self, "useOriginRatioPaddingValue", text))
+        self.addShadow.checkedChanged.connect(
+            lambda text: setattr(self, "addShadowValue", text))
+        self.whiteMargin.checkedChanged.connect(
+            lambda text: setattr(self, "whiteMarginValue", text))
+
+        # 布局样式
+
         # 左上角
-        self.leftTopType.currentTextChanged.connect(lambda text: setattr(self, "leftTopTypeValue", text))
-        self.leftTopColor.colorChanged.connect(lambda text: setattr(self, "leftTopFontColorValue", text))
-        self.leftTopBold.checkedChanged.connect(lambda text: setattr(self, "leftTopBoldValue", text))
+        self.leftTopType.currentTextChanged.connect(
+            lambda text: setattr(self, "leftTopTypeValue", text))
+        self.leftTopColor.colorChanged.connect(
+            lambda text: setattr(self, "leftTopFontColorValue", text))
+        self.leftTopBold.checkedChanged.connect(
+            lambda text: setattr(self, "leftTopBoldValue", text))
 
         # 左下角
-        self.leftBottomType.currentTextChanged.connect(lambda text: setattr(self, "leftBottomTypeValue", text))
-        self.leftBottomColor.colorChanged.connect(lambda text: setattr(self, "leftBottomFontColorValue", text))
-        self.leftBottomBold.checkedChanged.connect(lambda text: setattr(self, "leftBottomBoldValue", text))
+        self.leftBottomType.currentTextChanged.connect(
+            lambda text: setattr(self, "leftBottomTypeValue", text))
+        self.leftBottomColor.colorChanged.connect(
+            lambda text: setattr(self, "leftBottomFontColorValue", text))
+        self.leftBottomBold.checkedChanged.connect(
+            lambda text: setattr(self, "leftBottomBoldValue", text))
 
         # 右上角
-        self.rightTopType.currentTextChanged.connect(lambda text: setattr(self, "rightTopTypeValue", text))
-        self.rightTopColor.colorChanged.connect(lambda text: setattr(self, "rightTopFontColorValue", text))
-        self.rightTopBold.checkedChanged.connect(lambda text: setattr(self, "rightTopBoldValue", text))
+        self.rightTopType.currentTextChanged.connect(
+            lambda text: setattr(self, "rightTopTypeValue", text))
+        self.rightTopColor.colorChanged.connect(
+            lambda text: setattr(self, "rightTopFontColorValue", text))
+        self.rightTopBold.checkedChanged.connect(
+            lambda text: setattr(self, "rightTopBoldValue", text))
 
         # 右下角
-        self.rightBottomType.currentTextChanged.connect(lambda text: setattr(self, "rightBottomTypeValue", text))
-        self.rightBottomColor.colorChanged.connect(lambda text: setattr(self, "rightBottomFontColorValue", text))
-        self.rightBottomBold.checkedChanged.connect(lambda text: setattr(self, "rightBottomBoldValue", text))
-
-        self.baseFontSize.valueChanged.connect(lambda text: setattr(self, "baseFontSizeValue", text))
-        self.baseQuality.valueChanged.connect(lambda text: setattr(self, "baseQualityValue", text))
-        self.whiteMarginWidth.valueChanged.connect(lambda text: setattr(self, "whiteMarginWidthValue", text))
-        self.useEquivalentFocal.checkedChanged.connect(lambda text: setattr(self, "useEquivalentFocalValue", text))
-        self.useOriginRatioPadding.checkedChanged.connect(lambda text: setattr(self, "useOriginRatioPaddingValue", text))
-        self.addShadow.checkedChanged.connect(lambda text: setattr(self, "addShadowValue", text))
-        self.whiteMargin.checkedChanged.connect(lambda text: setattr(self, "whiteMarginValue", text))
+        self.rightBottomType.currentTextChanged.connect(
+            lambda text: setattr(self, "rightBottomTypeValue", text))
+        self.rightBottomColor.colorChanged.connect(
+            lambda text: setattr(self, "rightBottomFontColorValue", text))
+        self.rightBottomBold.checkedChanged.connect(
+            lambda text: setattr(self, "rightBottomBoldValue", text))
 
         # 连接样式切换信号
         self.styleNameComboBox.currentTextChanged.connect(self.loadStyle)
@@ -510,10 +569,9 @@ class SettingInterface(QWidget):
         else:  # Linux
             subprocess.run(["xdg-open", STYLE_PATH])
 
-
     def updatePreview(self):
         # 创建预览线程
-        print("创建预览线程....")
+        self.renderButton.start_loading()
         cache_preview = Path(CACHE_PATH) / "preview.png"
         if not os.path.exists(CACHE_PATH):
             os.makedirs(CACHE_PATH)
@@ -528,8 +586,15 @@ class SettingInterface(QWidget):
         """预览图片生成完成的回调"""
         task = progress.tasks[0]
         if task and task.status == ImageHandleStatus.FINISHED:
+            self.renderButton.stop_loading()
             self.previewImage.setImage(str(task.target_path))
             self.updatePreviewImage()
+            InfoBar.success(
+                self.tr("渲染成功"),
+                self.tr("图片渲染成功"),
+                duration=3000,
+                parent=self,
+            )
         else:
             InfoBar.error(
                 self.tr("处理错误"),
@@ -570,34 +635,48 @@ class SettingInterface(QWidget):
             style_content = json.load(f)
 
         # 解析样式内容
-        self.leftTopTypeValue = display_type_key(style_content["Layout"]["LeftTopType"])
-        self.leftTopFontColorValue = QColor(style_content["Layout"]["LeftTopFontColor"])
+
+        # 基础样式
+        self.baseFontSizeValue = style_content["Base"]["BaseFontSize"]
+        self.baseQualityValue = int(style_content["Base"]["BaseQuality"])
+        self.baseBackgroundValue = QColor(
+            style_content["Base"]["BackgroundColor"])
+
+        # 全局样式
+        self.useEquivalentFocalValue = style_content["Global"]["UseEquivalentFocal"]
+        self.useOriginRatioPaddingValue = style_content["Global"]["UseOriginRatioPadding"]
+        self.addShadowValue = style_content["Global"]["AddShadow"]
+        self.whiteMarginValue = style_content["Global"]["WhiteMargin"]
+        self.whiteMarginWidthValue = int(
+            style_content["Global"]["WhiteMarginWidth"])
+
+        # 布局样式
+        self.leftTopTypeValue = display_type_key(
+            style_content["Layout"]["LeftTopType"])
+        self.leftTopFontColorValue = QColor(
+            style_content["Layout"]["LeftTopFontColor"])
         self.leftTopBoldValue = style_content["Layout"]["LeftTopBold"]
 
-        self.leftBottomTypeValue = display_type_key(style_content["Layout"]["LeftBottomType"])
-        self.leftBottomFontColorValue = QColor(style_content["Layout"]["LeftBottomFontColor"])
+        self.leftBottomTypeValue = display_type_key(
+            style_content["Layout"]["LeftBottomType"])
+        self.leftBottomFontColorValue = QColor(
+            style_content["Layout"]["LeftBottomFontColor"])
         self.leftBottomBoldValue = style_content["Layout"]["LeftBottomBold"]
 
-        self.rightTopTypeValue = display_type_key(style_content["Layout"]["RightTopType"])
-        self.rightTopFontColorValue = QColor(style_content["Layout"]["RightTopFontColor"])
+        self.rightTopTypeValue = display_type_key(
+            style_content["Layout"]["RightTopType"])
+        self.rightTopFontColorValue = QColor(
+            style_content["Layout"]["RightTopFontColor"])
         self.rightTopBoldValue = style_content["Layout"]["RightTopBold"]
 
-        self.rightBottomTypeValue = display_type_key(style_content["Layout"]["RightBottomType"])
-        self.rightBottomFontColorValue = QColor(style_content["Layout"]["RightBottomFontColor"])
+        self.rightBottomTypeValue = display_type_key(
+            style_content["Layout"]["RightBottomType"])
+        self.rightBottomFontColorValue = QColor(
+            style_content["Layout"]["RightBottomFontColor"])
         self.rightBottomBoldValue = style_content["Layout"]["RightBottomBold"]
-
-        self.baseFontSizeValue = style_content["Layout"]["BaseFontSize"]
-        self.baseQualityValue = int(style_content["Layout"]["BaseQuality"])
-
-        self.useEquivalentFocalValue = style_content["Layout"]["UseEquivalentFocal"]
-        self.useOriginRatioPaddingValue = style_content["Layout"]["UseOriginRatioPadding"]
-        self.addShadowValue = style_content["Layout"]["AddShadow"]
-        self.whiteMarginValue = style_content["Layout"]["WhiteMargin"]
-        self.whiteMarginWidthValue = int(style_content["Layout"]["WhiteMarginWidth"])
 
         self.__setSettings()
 
-        print(f"设置指定样式000: {style_name}")
         cfg.set(cfg.styleName, style_name)
 
         # 重置标志位
@@ -662,11 +741,24 @@ class SettingInterface(QWidget):
         # 确保样式目录存在
         STYLE_PATH.mkdir(parents=True, exist_ok=True)
 
+        # 基础样式
+        cfg.set(cfg.backgroundColor, self.baseBackgroundValue.name())
+        cfg.set(cfg.baseFontSize, self.baseFontSizeValue)
+        cfg.set(cfg.baseQuality, self.baseQualityValue)
+
+        # 全局样式
+        cfg.set(cfg.useEquivalentFocal, self.useEquivalentFocalValue)
+        cfg.set(cfg.useOriginRatioPadding, self.useOriginRatioPaddingValue)
+        cfg.set(cfg.addShadow, self.addShadowValue)
+        cfg.set(cfg.whiteMarginWidth, self.whiteMarginWidthValue)
+
+        # 布局样式
         cfg.set(cfg.leftTopType, display_type_value(self.leftTopTypeValue))
         cfg.set(cfg.leftTopFontColor, self.leftTopFontColorValue.name())
         cfg.set(cfg.leftTopBold, self.leftTopBoldValue)
 
-        cfg.set(cfg.leftBottomType, display_type_value(self.leftBottomTypeValue))
+        cfg.set(cfg.leftBottomType, display_type_value(
+            self.leftBottomTypeValue))
         cfg.set(cfg.leftBottomFontColor, self.leftBottomFontColorValue.name())
         cfg.set(cfg.leftBottomBold, self.leftBottomBoldValue)
 
@@ -674,16 +766,11 @@ class SettingInterface(QWidget):
         cfg.set(cfg.rightTopFontColor, self.rightTopFontColorValue.name())
         cfg.set(cfg.rightTopBold, self.rightTopBoldValue)
 
-        cfg.set(cfg.rightBottomType, display_type_value(self.rightBottomTypeValue))
-        cfg.set(cfg.rightBottomFontColor, self.rightBottomFontColorValue.name())
+        cfg.set(cfg.rightBottomType, display_type_value(
+            self.rightBottomTypeValue))
+        cfg.set(cfg.rightBottomFontColor,
+                self.rightBottomFontColorValue.name())
         cfg.set(cfg.rightBottomBold, self.rightBottomBoldValue)
-
-        cfg.set(cfg.baseFontSize, self.baseFontSizeValue)
-        cfg.set(cfg.baseQuality, self.baseQualityValue)
-        cfg.set(cfg.useEquivalentFocal, self.useEquivalentFocalValue)
-        cfg.set(cfg.useOriginRatioPadding, self.useOriginRatioPaddingValue)
-        cfg.set(cfg.addShadow, self.addShadowValue)
-        cfg.set(cfg.whiteMarginWidth, self.whiteMarginWidthValue)
 
         # # 生成样式内容并保存
         config_dict = cfg.to_dict()
@@ -691,23 +778,25 @@ class SettingInterface(QWidget):
 
         with open(style_path, 'w', encoding='utf-8') as f:
             json.dump(config_dict, f, indent=4)
-        
+
         InfoBar.success(
-                title=self.tr("成功"),
-                content=self.tr("保存成功 ") + style_name,
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=2000,
-                parent=self,
-            )
+            title=self.tr("成功"),
+            content=self.tr("保存成功 ") + style_name,
+            orient=Qt.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP,
+            duration=2000,
+            parent=self,
+        )
 
     def resetStyle(self):
         self._initValues()
         self.__setSettings()
 
     def renderStyle(self):
-        self.updatePreview()
+        if not self.renderButton.is_loading:
+            self.renderButton.start_loading()
+            self.updatePreview()
 
 
 class StyleNameDialog(MessageBoxBase):
