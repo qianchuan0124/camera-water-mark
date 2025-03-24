@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QFontDatabase
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CardWidget, PrimaryPushButton
 from qfluentwidgets import FluentIcon as FIF
@@ -32,6 +32,7 @@ from app.utils.mater_mark_preview import generate_preview
 from app.entity.constants import DISPLAY_TYPE, display_type_key, display_type_value
 from app.thread.image_handle_thread import ImageHandleTask, ImageHandleThread, HandleProgress, ImageHandleStatus
 from app.components.common_item import LoadingButton
+from app.entity.font_manager import font_manager
 
 DEFAULT_BG = {
     "path": ASSETS_PATH / "default_bg.jpg",
@@ -73,7 +74,10 @@ class SettingInterface(QWidget):
 
         # 基础样式
         self.baseBackgroundValue = QColor(cfg.backgroundColor.value)
+        self.baseFontName = cfg.baseFontName.value
+        self.boldFontName = cfg.boldFontName.value
         self.baseFontSizeValue = cfg.baseFontSize.value
+        self.boldFontSizeValue = cfg.boldFontSize.value
         self.baseQualityValue = cfg.baseQuality.value
 
         # 模式选择
@@ -82,6 +86,7 @@ class SettingInterface(QWidget):
         # 全局样式
         self.useEquivalentFocalValue = cfg.useEquivalentFocal.value
         self.useOriginRatioPaddingValue = cfg.useOriginRatioPadding.value
+        self.backgroundBlurValue = cfg.backgroundBlur.value
         self.addShadowValue = cfg.addShadow.value
         self.whiteMarginValue = cfg.whiteMargin.value
         self.whiteMarginWidthValue = cfg.whiteMarginWidth.value
@@ -206,12 +211,39 @@ class SettingInterface(QWidget):
             self.tr("背景颜色"),
             self.tr("设置照片背景颜色"),
         )
+        
+        # 标准字体
+        self.baseFont = ComboBoxSettingCard(
+            FIF.FONT,
+            self.tr("标准字体"),
+            self.tr("选择标准字体"),
+            texts=font_manager.font_families(),
+        )
+        self.baseFont.comboBox.setMaxVisibleItems(12)
 
-        # 字体大小
+        # 粗体字体
+        self.boldFont = ComboBoxSettingCard(
+            FIF.FONT,
+            self.tr("粗体字体"),
+            self.tr("选择粗体字体"),
+            texts=font_manager.font_families(),
+        )
+        self.boldFont.comboBox.setMaxVisibleItems(12)
+
+        # 标准字体大小
         self.baseFontSize = SpinBoxSettingCard(
             FIF.FONT_SIZE,
-            self.tr("基础字号"),
-            self.tr("设置基础字号"),
+            self.tr("标准字号"),
+            self.tr("设置标准字号"),
+            minimum=1,
+            maximum=3,
+        )
+
+        # 粗体字体大小
+        self.boldFontSize = SpinBoxSettingCard(
+            FIF.FONT_SIZE,
+            self.tr("粗体字号"),
+            self.tr("设置粗体字号"),
             minimum=1,
             maximum=3,
         )
@@ -253,6 +285,14 @@ class SettingInterface(QWidget):
             self.globalGroup
         )
 
+        self.backgroundBlur = SwitchSettingCard(
+            FIF.BACKGROUND_FILL,
+            self.tr("背景模糊"),
+            self.tr("是否设置背景模糊"),
+            None,
+            self.globalGroup
+        )
+
         # 添加阴影
         self.addShadow = SwitchSettingCard(
             FIF.LEAF,
@@ -262,22 +302,22 @@ class SettingInterface(QWidget):
             self.globalGroup
         )
 
-        # 添加白色边框
+        # 添加白色间距
         self.whiteMargin = SwitchSettingCard(
             FIF.COPY,
-            self.tr("白色边框"),
-            self.tr("是否添加白色边框"),
+            self.tr("白色间距"),
+            self.tr("是否添加白色间距"),
             None,
             self.globalGroup
         )
 
-        # 白色边框宽度
+        # 白色间距宽度
         self.whiteMarginWidth = SpinBoxSettingCard(
             FIF.COPY,
-            self.tr("白色边框宽度"),
-            self.tr("设置白色边框宽度"),
-            minimum=1,
-            maximum=100,
+            self.tr("白色间距宽度"),
+            self.tr("设置白色间距宽度"),
+            minimum=0,
+            maximum=10,
         )
 
         # LOGO样式
@@ -404,7 +444,10 @@ class SettingInterface(QWidget):
 
         # 基础样式
         self.baseGroup.addSettingCard(self.baseBackground)
+        self.baseGroup.addSettingCard(self.baseFont)
         self.baseGroup.addSettingCard(self.baseFontSize)
+        self.baseGroup.addSettingCard(self.boldFont)
+        self.baseGroup.addSettingCard(self.boldFontSize)
         self.baseGroup.addSettingCard(self.baseQuality)
 
         # 模式
@@ -417,6 +460,7 @@ class SettingInterface(QWidget):
         # 全局样式
         self.globalGroup.addSettingCard(self.useEquivalentFocal)
         self.globalGroup.addSettingCard(self.useOriginRatioPadding)
+        self.globalGroup.addSettingCard(self.backgroundBlur)
         self.globalGroup.addSettingCard(self.addShadow)
         self.globalGroup.addSettingCard(self.whiteMargin)
         self.globalGroup.addSettingCard(self.whiteMarginWidth)
@@ -467,8 +511,11 @@ class SettingInterface(QWidget):
 
         # 基础样式
         self.baseBackground.setColor(self.baseBackgroundValue)
+        self.baseFont.comboBox.setCurrentText(self.baseFontName)
+        self.boldFont.comboBox.setCurrentText(self.boldFontName)
         self.baseQuality.setValue(self.baseQualityValue)
         self.baseFontSize.setValue(self.baseFontSizeValue)
+        self.boldFontSize.setValue(self.boldFontSizeValue)
 
         # 模式
         self.markMode.comboBox.setCurrentText(self.modeValue.value)
@@ -476,6 +523,7 @@ class SettingInterface(QWidget):
         # 全局样式
         self.useEquivalentFocal.setValue(self.useEquivalentFocalValue)
         self.useOriginRatioPadding.setValue(self.useOriginRatioPaddingValue)
+        self.backgroundBlur.setValue(self.backgroundBlurValue)
         self.addShadow.setValue(self.addShadowValue)
         self.whiteMargin.setValue(self.whiteMarginValue)
         self.whiteMarginWidth.setValue(self.whiteMarginWidthValue)
@@ -540,14 +588,6 @@ class SettingInterface(QWidget):
         self.styleNameComboBox.comboBox.setCurrentText(
             cfg.get(cfg.styleName))
 
-        # 获取系统字体,设置comboBox的选项
-        # fontDatabase = QFontDatabase()
-        # fontFamilies = fontDatabase.families()
-        # self.subFontCard.addItems(fontFamilies)
-
-        # 设置字体选项框最大显示数量
-        # self.subFontCard.comboBox.setMaxVisibleItems(12)
-
         # 获取样式目录下的所有json文件名
         style_files = [f.stem for f in STYLE_PATH.glob("*.json")]
         if "default" in style_files:
@@ -574,8 +614,12 @@ class SettingInterface(QWidget):
         # 基础样式
         self.baseBackground.colorChanged.connect(
             lambda text: setattr(self, "baseBackgroundValue", text))
+        self.baseFont.currentTextChanged.connect(lambda text: setattr(self, "baseFontName", text))
+        self.boldFont.currentTextChanged.connect(lambda text: setattr(self, "boldFontName", text))
         self.baseFontSize.valueChanged.connect(
             lambda text: setattr(self, "baseFontSizeValue", text))
+        self.boldFontSize.valueChanged.connect(
+            lambda text: setattr(self, "boldFontSizeValue", text))
         self.baseQuality.valueChanged.connect(
             lambda text: setattr(self, "baseQualityValue", text))
         
@@ -589,6 +633,7 @@ class SettingInterface(QWidget):
             lambda text: setattr(self, "useEquivalentFocalValue", text))
         self.useOriginRatioPadding.checkedChanged.connect(
             lambda text: setattr(self, "useOriginRatioPaddingValue", text))
+        self.backgroundBlur.checkedChanged.connect(lambda text: setattr(self, "backgroundBlurValue", text))
         self.addShadow.checkedChanged.connect(
             lambda text: setattr(self, "addShadowValue", text))
         self.whiteMargin.checkedChanged.connect(
@@ -696,6 +741,7 @@ class SettingInterface(QWidget):
                 parent=self,
             )
         else:
+            self.renderButton.stop_loading()
             InfoBar.error(
                 self.tr("处理错误"),
                 self.tr("图片渲染错误"),
@@ -737,10 +783,14 @@ class SettingInterface(QWidget):
         # 解析样式内容
 
         # 基础样式
-        self.baseFontSizeValue = style_content["Base"]["BaseFontSize"]
-        self.baseQualityValue = int(style_content["Base"]["BaseQuality"])
         self.baseBackgroundValue = QColor(
             style_content["Base"]["BackgroundColor"])
+        self.baseFontName = style_content["Base"]["BaseFontName"]
+        self.baseFontSizeValue = style_content["Base"]["BaseFontSize"]
+        self.boldFontName = style_content["Base"]["BoldFontName"]
+        self.boldFontSizeValue = style_content["Base"]["BoldFontSize"]
+        self.baseQualityValue = int(style_content["Base"]["BaseQuality"])
+        
         
         # 模式
         self.modeValue = MARK_MODE.key(style_content["Mode"]["MarkMode"])
@@ -748,6 +798,7 @@ class SettingInterface(QWidget):
         # 全局样式
         self.useEquivalentFocalValue = style_content["Global"]["UseEquivalentFocal"]
         self.useOriginRatioPaddingValue = style_content["Global"]["UseOriginRatioPadding"]
+        self.backgroundBlurValue = style_content["Global"]["BackgroundBlur"]
         self.addShadowValue = style_content["Global"]["AddShadow"]
         self.whiteMarginValue = style_content["Global"]["WhiteMargin"]
         self.whiteMarginWidthValue = int(
@@ -851,7 +902,10 @@ class SettingInterface(QWidget):
 
         # 基础样式
         cfg.set(cfg.backgroundColor, self.baseBackgroundValue.name())
+        cfg.set(cfg.baseFontName, self.baseFontName)
+        cfg.set(cfg.boldFontName, self.boldFontName)
         cfg.set(cfg.baseFontSize, self.baseFontSizeValue)
+        cfg.set(cfg.boldFontSize, self.boldFontSizeValue)
         cfg.set(cfg.baseQuality, self.baseQualityValue)
 
         # 模式
@@ -860,7 +914,9 @@ class SettingInterface(QWidget):
         # 全局样式
         cfg.set(cfg.useEquivalentFocal, self.useEquivalentFocalValue)
         cfg.set(cfg.useOriginRatioPadding, self.useOriginRatioPaddingValue)
+        cfg.set(cfg.backgroundBlur, self.backgroundBlurValue)
         cfg.set(cfg.addShadow, self.addShadowValue)
+        cfg.set(cfg.whiteMargin, self.whiteMarginValue)
         cfg.set(cfg.whiteMarginWidth, self.whiteMarginWidthValue)
 
         # LOGO布局

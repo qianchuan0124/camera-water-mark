@@ -1,15 +1,18 @@
 {
     "Global": {
         "AddShadow": false,
+        "BackgroundBlur": true,
         "UseEquivalentFocal": true,
         "UseOriginRatioPadding": false,
-        "WhiteMargin": true,
-        "WhiteMarginWidth": 3
+        "WhiteMargin": false,
+        "WhiteMarginWidth": 0
     },
     "Base": {
         "BackgroundColor": "#ffffff",
+        "BaseFontName": "AlibabaPuHuiTi-2-45-Light",
         "BaseFontSize": 1,
         "BaseQuality": 100,
+        "BoldFontName": "AlibabaPuHuiTi-2-85-Bold",
         "BoldFontSize": 1
     },
     "LOGO": {

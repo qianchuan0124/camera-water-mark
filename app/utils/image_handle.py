@@ -399,3 +399,29 @@ def extract_attribute(data_dict: dict, *keys, default_value: str = '', prefix=''
         if key in data_dict:
             return data_dict[key] + suffix
     return default_value
+
+def hex_to_rgba(hex_color, alpha=255):
+    """
+    将十六进制颜色字符串转换为 (R, G, B, A) 格式的元组。
+
+    :param hex_color: 十六进制颜色字符串，例如 "#FFFFFF"
+    :param alpha: 透明度值（默认为 255，表示完全不透明）
+    :return: (R, G, B, A) 格式的元组
+    """
+    # 去掉 # 符号
+    hex_color = hex_color.lstrip('#')
+    
+    # 确保十六进制字符串的长度为 6
+    if len(hex_color) != 6:
+        raise ValueError("无效的十六进制颜色字符串。长度应为 6 个字符。")
+    
+    # 转换为整数
+    rgb = int(hex_color, 16)
+    
+    # 提取 R, G, B 分量
+    r = (rgb >> 16) & 0xFF
+    g = (rgb >> 8) & 0xFF
+    b = rgb & 0xFF
+    
+    # 返回 (R, G, B, A) 格式的元组
+    return (r, g, b, alpha)

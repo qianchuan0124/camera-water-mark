@@ -1,3 +1,4 @@
+import os
 import logging
 from pathlib import Path
 from enum import Enum
@@ -18,6 +19,7 @@ SETTINGS_PATH = APPDATA_PATH / "settings.json"
 STYLE_PATH = RESOURCE_PATH / "style"
 EXIFTOOL_PATH = APPDATA_PATH / "exiftool"
 OUTPUT_PATH = APPDATA_PATH / "output"
+FONT_PATH = RESOURCE_PATH / "fonts"
 ENCODING = 'gbk'
 
 
@@ -114,13 +116,15 @@ class MARK_MODE(Enum):
         return values
     
     def isSimple(self):
-        return self == MARK_MODE.SIMPLE
+        return self == MARK_MODE.SIMPLE 
 
 
 class Config(QConfig):
     styleName = ConfigItem("Style", "StyleName", "default")
 
     baseQuality = ConfigItem("Base", "BaseQuality", 100)
+    baseFontName = ConfigItem("Base", "BaseFontName", "AlibabaPuHuiTi-2-45-Light")
+    boldFontName = ConfigItem("Base", "BoldFontName", "AlibabaPuHuiTi-2-45-Bold")
     baseFontSize = ConfigItem("Base", "BaseFontSize", 1)
     boldFontSize = ConfigItem("Base", "BoldFontSize", 1)
     backgroundColor = ConfigItem("Base", "BackgroundColor", "#ffffff")
@@ -131,6 +135,7 @@ class Config(QConfig):
     useOriginRatioPadding = ConfigItem(
         "Global", "UseOriginRatioPadding", False)
     addShadow = ConfigItem("Global", "AddShadow", False)
+    backgroundBlur = ConfigItem("Global", "BackgroundBlur", False)
     whiteMargin = ConfigItem("Global", "WhiteMargin", True)
     whiteMarginWidth = ConfigItem("Global", "WhiteMarginWidth", 3)
 

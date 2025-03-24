@@ -4,7 +4,7 @@ from pathlib import Path
 from PyQt5.QtCore import QThread, pyqtSignal
 from dataclasses import dataclass
 from app.config import cfg, LOGO_PATH, MARK_MODE
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageFilter
 from PIL.Image import Transpose
 from app.models.image_info import ImageInfo
 from app.entity.exif_id import ExifId
@@ -15,7 +15,8 @@ from app.utils.image_handle import (
     append_image_by_side, 
     resize_image_with_width, 
     merge_images, 
-    resize_image_with_height
+    resize_image_with_height,
+    hex_to_rgba
 )
 from app.models.image_config import get_font, get_bold_font
 
@@ -32,6 +33,8 @@ SMALL_VERTICAL_GAP = Image.new('RGBA', (20, 50), color=TRANSPARENT)
 MIDDLE_VERTICAL_GAP = Image.new('RGBA', (20, 100), color=TRANSPARENT)
 MIDDLE_HORIZONTAL_GAP = Image.new('RGBA', (100, 20), color=TRANSPARENT)
 LARGE_HORIZONTAL_GAP = Image.new('RGBA', (200, 20), color=TRANSPARENT)
+GAUSSIAN_KERNEL_RADIUS = 35
+PADDING_PERCENT_IN_BACKGROUND = 0.18
 
 
 class ImageHandleStatus(Enum):
@@ -127,18 +130,41 @@ class ImageHandleThread(QThread):
                 progress = int(index / len(self.tasks) * 100)
                 self.loading.emit(HandleProgress(self.tasks, progress))
             except Exception as e:
-                logger.error(f"Error: {str(e)}")
+                logger.exception(f"渲染出错，Error: {str(e)}")
                 self.tasks[index].status = ImageHandleStatus.ERROR
                 self.loading.emit(HandleProgress(self.tasks, progress))
         self.close()
         self.finished.emit(HandleProgress(self.tasks, 100))
 
     def hanle_task(self, image_info: ImageInfo):
+        if (cfg.backgroundBlur.value):
+            self.add_background_blur()
+
+        if (cfg.whiteMargin.value):
+            self.add_white_margin()
+            
         model: MARK_MODE = MARK_MODE.key(cfg.markMode.value)
         if model == MARK_MODE.SIMPLE:
             self.simple_mode(image_info)
         else:
             self.standard_mode(image_info)
+
+    def add_background_blur(self):
+        background = self.get_watermark_img()
+        background = background.filter(ImageFilter.GaussianBlur(radius=GAUSSIAN_KERNEL_RADIUS))
+        fg = Image.new('RGB', background.size, color=(255, 255, 255))
+        background = Image.blend(background, fg, 0.1)
+        background = background.resize((int(self.get_width() * (1 + PADDING_PERCENT_IN_BACKGROUND)),
+                                        int(self.get_height() * (1 + PADDING_PERCENT_IN_BACKGROUND))))
+        background.paste(self.get_watermark_img(),
+                         (int(self.get_width() * PADDING_PERCENT_IN_BACKGROUND / 2),
+                          int(self.get_height() * PADDING_PERCENT_IN_BACKGROUND / 2)))
+        self.update_watermark_img(background)
+
+    def add_white_margin(self):
+        padding_size = int(cfg.whiteMarginWidth.value * min(self.get_width(), self.get_height()) / 100)
+        padding_img = padding_image(self.get_watermark_img(), padding_size, 'tlrb', color=hex_to_rgba(cfg.backgroundColor.value))
+        self.update_watermark_img(padding_img)
 
     def simple_mode(self, image_info: ImageInfo):
         ratio = .16 if self.get_ratio() >= 1 else .1
