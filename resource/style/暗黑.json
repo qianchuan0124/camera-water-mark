@@ -10,10 +10,11 @@
     "Base": {
         "BackgroundColor": "#212121",
         "BaseFontName": "AlibabaPuHuiTi-2-45-Light",
-        "BoldFontName": "AlibabaPuHuiTi-2-45-Bold",
         "BaseFontSize": 1,
         "BaseQuality": 100,
-        "BoldFontSize": 1
+        "BoldFontName": "AlibabaPuHuiTi-2-45-Bold",
+        "BoldFontSize": 1,
+        "RadiusInfo": 20
     },
     "LOGO": {
         "isLogoLeft": true,

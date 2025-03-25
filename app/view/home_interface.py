@@ -4,14 +4,16 @@ import subprocess
 from typing import List
 from pathlib import Path
 from PyQt5.QtCore import Qt, QStandardPaths
+from PyQt5.QtGui import QColor
 from qfluentwidgets import FluentIcon as FIF
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHeaderView, QTableWidgetItem, QWidget, QHBoxLayout, QFileDialog
 from qfluentwidgets import TableWidget, TableItemDelegate, HyperlinkButton
 from qfluentwidgets import FluentIcon
 from app.thread.image_handle_thread import ImageHandleThread, ImageHandleTask, ImageHandleStatus, HandleProgress
 from qfluentwidgets import ProgressBar, BodyLabel, InfoBar, InfoBarPosition
-from app.config import OUTPUT_PATH, SupportedImageFormats
-from app.models.picutre_model import PictureItem
+from app.config import OUTPUT_PATH
+from app.entity.enums import SupportedImageFormats
+from app.entity.picutre_item import PictureItem
 from app.components.common_item import TapButton, SearchInput
 from app.view.log_window import LogWindow
 from app.utils.logger import setup_logger
@@ -28,6 +30,7 @@ class HomeInterface(QWidget):
         self.setAcceptDrops(True)
         self.log_window = None
         self.target_path = OUTPUT_PATH
+        self.isEnable = True
 
         self.setup_ui()
         self.setup_signals()
@@ -216,7 +219,16 @@ class HomeInterface(QWidget):
             self.on_image_handle_finished)
         self.image_handle_thread.loading.connect(self.on_image_handle_loading)
         self.image_handle_thread.error.connect(self.on_image_handle_error)
+        self.isEnable = False
+        self.refreshButtons()
         self.image_handle_thread.start()
+
+    def refreshButtons(self):
+        self.clean_button.setEnabled(self.isEnable)
+        self.start_button.setEnabled(self.isEnable)
+        self.add_button.setEnabled(self.isEnable)
+        self.search_input.setEnabled(self.isEnable)
+        self.target_button.setEnabled(self.isEnable)
 
     def _create_picture_table(self):
         """创建图片表格"""
@@ -298,6 +310,7 @@ class HomeInterface(QWidget):
             parent=self,
         )
         delete_btn.setIcon(FIF.DELETE)
+        delete_btn.setEnabled(self.isEnable)
         delete_btn.clicked.connect(
             lambda checked, r=row: self._delete_model(r))
         delete_layout.addStretch()
@@ -309,7 +322,10 @@ class HomeInterface(QWidget):
         status_item = QTableWidgetItem(
             self.tr(f"{model.status.value}"))
         if model.status == ImageHandleStatus.FINISHED:
-            status_item.setForeground(Qt.green)
+            status_item.setForeground(QColor("#52CD9F"))
+        elif model.status == ImageHandleStatus.ERROR:
+            status_item.setForeground(QColor("#F14A5B"))
+            status_item.setToolTip(model.errorInfo)
         status_item.setTextAlignment(Qt.AlignCenter)
         self.picture_table.setItem(row, 3, status_item)
 
@@ -340,6 +356,8 @@ class HomeInterface(QWidget):
         event.accept() if event.mimeData().hasUrls() else event.ignore()
 
     def dropEvent(self, event):
+        if not self.isEnable:
+            return
         files = [u.toLocalFile() for u in event.mimeData().urls()]
         for file_path in files:
             if not os.path.isfile(file_path):
@@ -388,11 +406,14 @@ class HomeInterface(QWidget):
             for model in self.picture_models:
                 if model.original_path == task.image_path:
                     model.status = task.status
+                    model.errorInfo = task.errorInfo
                     break
         self.progress_bar.setValue(progress.progress)
         self.status_label.setText("处理完成")
         self._populate_model_table()
         self.open_folder(self.target_path)
+        self.isEnable = True
+        self.refreshButtons()
         InfoBar.success(
             self.tr("成功"),
             self.tr("照片处理已完成"),
@@ -407,12 +428,15 @@ class HomeInterface(QWidget):
             for model in self.picture_models:
                 if model.original_path == task.image_path:
                     model.status = task.status
+                    model.errorInfo = task.errorInfo
                     break
         self.progress_bar.setValue(progress.progress)
         self.status_label.setText("处理中")
         self._populate_model_table()
 
     def on_image_handle_error(self, error):
+        self.isEnable = True
+        self.refreshButtons()
         InfoBar.error(
             self.tr("错误"),
             str(error),

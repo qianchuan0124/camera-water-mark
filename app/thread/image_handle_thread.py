@@ -3,22 +3,28 @@ from typing import List
 from pathlib import Path
 from PyQt5.QtCore import QThread, pyqtSignal
 from dataclasses import dataclass
-from app.config import cfg, LOGO_PATH, MARK_MODE
-from PIL import Image, ImageOps, ImageFilter
+from app.config import cfg, LOGO_PATH
+from app.entity.enums import MARK_MODE, ExifId
+from app.entity.custom_error import CustomError
+from PIL import Image, ImageOps
 from PIL.Image import Transpose
-from app.models.image_info import ImageInfo
-from app.entity.exif_id import ExifId
+from app.entity.image_info import ImageInfo
 from app.utils.image_handle import (
-    text_to_image, 
-    concatenate_image, 
-    padding_image, 
-    append_image_by_side, 
-    resize_image_with_width, 
-    merge_images, 
-    resize_image_with_height,
-    hex_to_rgba
+    text_to_image,
+    concatenate_image,
+    padding_image,
+    append_image_by_side,
+    resize_image_with_width,
+    merge_images,
+    resize_image_with_height
 )
-from app.models.image_config import get_font, get_bold_font
+from app.entity.font_manager import font_manager
+from app.utils.image_render import (
+    add_shadow,
+    add_rounded_corners,
+    add_white_margin,
+    add_background_blur
+)
 
 from app.utils.logger import setup_logger
 logger = setup_logger("image_handle_thread")
@@ -33,8 +39,6 @@ SMALL_VERTICAL_GAP = Image.new('RGBA', (20, 50), color=TRANSPARENT)
 MIDDLE_VERTICAL_GAP = Image.new('RGBA', (20, 100), color=TRANSPARENT)
 MIDDLE_HORIZONTAL_GAP = Image.new('RGBA', (100, 20), color=TRANSPARENT)
 LARGE_HORIZONTAL_GAP = Image.new('RGBA', (200, 20), color=TRANSPARENT)
-GAUSSIAN_KERNEL_RADIUS = 35
-PADDING_PERCENT_IN_BACKGROUND = 0.18
 
 
 class ImageHandleStatus(Enum):
@@ -49,6 +53,7 @@ class ImageHandleTask:
     image_path: Path
     target_path: Path
     status: ImageHandleStatus = ImageHandleStatus.WAITING
+    errorInfo: str = ""
 
 
 @dataclass
@@ -118,7 +123,8 @@ class ImageHandleThread(QThread):
         for index, task in enumerate(self.tasks):
             try:
                 self.image = Image.open(task.image_path)
-                self.watermark_img = None
+                self.image = add_rounded_corners(self.image)
+                self.watermark_img = self.image.copy()
                 image_info = ImageInfo(task.image_path)
                 self.fix_orientation(image_info)
                 self.tasks[index].status = ImageHandleStatus.PROCESSING
@@ -129,76 +135,73 @@ class ImageHandleThread(QThread):
                 self.tasks[index].status = ImageHandleStatus.FINISHED
                 progress = int(index / len(self.tasks) * 100)
                 self.loading.emit(HandleProgress(self.tasks, progress))
+            except CustomError as e:
+                self.tasks[index].status = ImageHandleStatus.ERROR
+                self.tasks[index].errorInfo = e.message
+                self.loading.emit(HandleProgress(self.tasks, progress))
             except Exception as e:
                 logger.exception(f"渲染出错，Error: {str(e)}")
                 self.tasks[index].status = ImageHandleStatus.ERROR
+                self.tasks[index].errorInfo = "未知错误"
                 self.loading.emit(HandleProgress(self.tasks, progress))
         self.close()
         self.finished.emit(HandleProgress(self.tasks, 100))
 
     def hanle_task(self, image_info: ImageInfo):
+        if (cfg.addShadow.value):
+            image = add_shadow(self.get_watermark_img())
+            self.update_watermark_img(image)
+
         if (cfg.backgroundBlur.value):
-            self.add_background_blur()
+            image = add_background_blur(self.get_watermark_img())
+            self.update_watermark_img(image)
 
         if (cfg.whiteMargin.value):
-            self.add_white_margin()
-            
+            image = add_white_margin(self.get_watermark_img())
+            self.update_watermark_img(image)
+
         model: MARK_MODE = MARK_MODE.key(cfg.markMode.value)
         if model == MARK_MODE.SIMPLE:
             self.simple_mode(image_info)
         else:
             self.standard_mode(image_info)
 
-    def add_background_blur(self):
-        background = self.get_watermark_img()
-        background = background.filter(ImageFilter.GaussianBlur(radius=GAUSSIAN_KERNEL_RADIUS))
-        fg = Image.new('RGB', background.size, color=(255, 255, 255))
-        background = Image.blend(background, fg, 0.1)
-        background = background.resize((int(self.get_width() * (1 + PADDING_PERCENT_IN_BACKGROUND)),
-                                        int(self.get_height() * (1 + PADDING_PERCENT_IN_BACKGROUND))))
-        background.paste(self.get_watermark_img(),
-                         (int(self.get_width() * PADDING_PERCENT_IN_BACKGROUND / 2),
-                          int(self.get_height() * PADDING_PERCENT_IN_BACKGROUND / 2)))
-        self.update_watermark_img(background)
-
-    def add_white_margin(self):
-        padding_size = int(cfg.whiteMarginWidth.value * min(self.get_width(), self.get_height()) / 100)
-        padding_img = padding_image(self.get_watermark_img(), padding_size, 'tlrb', color=hex_to_rgba(cfg.backgroundColor.value))
-        self.update_watermark_img(padding_img)
-
     def simple_mode(self, image_info: ImageInfo):
         ratio = .16 if self.get_ratio() >= 1 else .1
         padding_ratio = .5 if self.get_ratio() >= 1 else .5
 
         first_text = text_to_image('Shot on',
-                                    get_font(),
-                                    get_bold_font(),
-                                    is_bold=False,
-                                    fill='#212121')
+                                   font_manager.get_font(),
+                                   font_manager.get_bold_font(),
+                                   is_bold=False,
+                                   fill='#212121')
         model = text_to_image(image_info.model().replace(r'/', ' ').replace(r'_', ' '),
-                                get_font(),
-                                get_bold_font(),
-                                is_bold=True,
-                                fill='#D32F2F')
+                              font_manager.get_font(),
+                              font_manager.get_bold_font(),
+                              is_bold=True,
+                              fill='#D32F2F')
         make = text_to_image(image_info.make().split(' ')[0],
-                                get_font(),
-                                get_bold_font(),
-                                is_bold=True,
-                                fill='#212121')
-        first_line = merge_images([first_text, MIDDLE_HORIZONTAL_GAP, model, MIDDLE_HORIZONTAL_GAP, make], 0, 1)
+                             font_manager.get_font(),
+                             font_manager.get_bold_font(),
+                             is_bold=True,
+                             fill='#212121')
+        first_line = merge_images(
+            [first_text, MIDDLE_HORIZONTAL_GAP, model, MIDDLE_HORIZONTAL_GAP, make], 0, 1)
         second_line_text = image_info.get_param_str()
         second_line = text_to_image(second_line_text,
-                                    get_font(),
-                                    get_bold_font(),
+                                    font_manager.get_font(),
+                                    font_manager.get_bold_font(),
                                     is_bold=False,
                                     fill='#9E9E9E')
-        image = merge_images([first_line, MIDDLE_VERTICAL_GAP, second_line], 1, 0)
+        image = merge_images(
+            [first_line, MIDDLE_VERTICAL_GAP, second_line], 1, 0)
         height = self.get_height() * ratio * padding_ratio
         image = resize_image_with_height(image, int(height))
         horizontal_padding = int((self.get_width() - image.width) / 2)
         vertical_padding = int((self.get_height() * ratio - image.height) / 2)
 
-        watermark = ImageOps.expand(image, (horizontal_padding, vertical_padding), fill=TRANSPARENT)
+        watermark = ImageOps.expand(
+            image, (horizontal_padding, vertical_padding), fill=TRANSPARENT)
         bg = Image.new('RGBA', watermark.size, color='white')
         bg = Image.alpha_composite(bg, watermark)
 
@@ -222,25 +225,25 @@ class ImageHandleThread(QThread):
         with Image.new('RGBA', (10, 100), color=self.bg_color) as empty_padding:
             # 填充左边的文字内容
             left_top = text_to_image(image_info.parse_exif_info(cfg.leftTopType.value),
-                                     get_font(),
-                                     get_bold_font(),
+                                     font_manager.get_font(),
+                                     font_manager.get_bold_font(),
                                      is_bold=cfg.leftTopBold.value,
                                      fill=cfg.leftTopFontColor.value)
             left_bottom = text_to_image(image_info.parse_exif_info(cfg.leftBottomType.value),
-                                        get_font(),
-                                        get_bold_font(),
+                                        font_manager.get_font(),
+                                        font_manager.get_bold_font(),
                                         is_bold=cfg.leftBottomBold.value,
                                         fill=cfg.leftBottomFontColor.value)
             left = concatenate_image([left_top, empty_padding, left_bottom])
             # 填充右边的文字内容
             right_top = text_to_image(image_info.parse_exif_info(cfg.rightTopType.value),
-                                      get_font(),
-                                      get_bold_font(),
+                                      font_manager.get_font(),
+                                      font_manager.get_bold_font(),
                                       is_bold=cfg.rightTopBold.value,
                                       fill=cfg.rightTopFontColor.value)
             right_bottom = text_to_image(image_info.parse_exif_info(cfg.rightBottomType.value),
-                                         get_font(),
-                                         get_bold_font(),
+                                         font_manager.get_font(),
+                                         font_manager.get_bold_font(),
                                          is_bold=cfg.rightBottomBold.value,
                                          fill=cfg.rightBottomFontColor.value)
             right = concatenate_image([right_top, empty_padding, right_bottom])

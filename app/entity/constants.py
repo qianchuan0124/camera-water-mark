@@ -10,10 +10,6 @@ DATETIME_NAME = '拍摄时间(eg. 2023-01-01 12:00)'
 DATETIME_VALUE = 'Datetime'
 DATE_NAME = '拍摄日期(eg. 2023-01-01)'
 DATE_VALUE = 'Date'
-CUSTOM_NAME = '自定义'
-CUSTOM_VALUE = 'Custom'
-NONE_NAME = ' '
-NONE_VALUE = 'None'
 LENS_MAKE_LENS_MODEL_NAME = '镜头厂商 + 镜头型号(eg. Nikon Nikkor 24-70 f/2.8)'
 LENS_MAKE_LENS_MODEL_VALUE = 'LensMake_LensModel'
 CAMERA_MODEL_LENS_MODEL_NAME = '相机型号 + 镜头型号(eg. Nikon Z7 Nikkor 24-70 f/2.8)'
@@ -31,44 +27,8 @@ DATETIME_FILENAME_VALUE = 'Datetime_Filename'
 GEO_INFO = '地理信息'
 GEO_INFO_VALUE = 'GeoInfo'
 
-LOCATION_LEFT_TOP = 'left_top'
-LOCATION_LEFT_BOTTOM = 'left_bottom'
-LOCATION_RIGHT_TOP = 'right_top'
-LOCATION_RIGHT_BOTTOM = 'right_bottom'
 TRANSPARENT = (0, 0, 0, 0)
 DEBUG = False
 GRAY = '#CBCBC9'
 
 DEFAULT_VALUE = '--'
-
-
-DISPLAY_TYPE = {
-    "相机型号": "Model",
-    "镜头型号": "LensModel",
-    "拍摄时间": "Datetime",
-    "拍摄参数": "Param",
-}
-
-LAYOUT_TYPE = {
-    "LOGO居左": "watermark_left_logo",
-    "LOGO居右": "watermark_right_logo",
-    "暗黑模式LOGO居左": "dark_watermark_left_logo",
-    "暗黑模式LOGO居右": "dark_watermark_right_logo",
-    "自定义配置": "custom_watermark",
-    "1:1填充": "square",
-    "简洁": "simple",
-    "背景模糊": "background_blur",
-    "背景模糊+白框": "background_blur_with_white_border",
-}
-
-def display_type_key(value: str):
-    for key, val in DISPLAY_TYPE.items():
-        if val == value:
-            return key
-    return next(iter(DISPLAY_TYPE))
-
-def display_type_value(key: str):
-    for k, val in DISPLAY_TYPE.items():
-        if k == key:
-            return val
-    return next(iter(DISPLAY_TYPE.values()))

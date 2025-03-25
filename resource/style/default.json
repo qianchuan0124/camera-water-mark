@@ -1,11 +1,11 @@
 {
     "Global": {
-        "AddShadow": false,
-        "BackgroundBlur": true,
+        "AddShadow": true,
+        "BackgroundBlur": false,
         "UseEquivalentFocal": true,
         "UseOriginRatioPadding": false,
-        "WhiteMargin": false,
-        "WhiteMarginWidth": 0
+        "WhiteMargin": true,
+        "WhiteMarginWidth": 3
     },
     "Base": {
         "BackgroundColor": "#ffffff",
@@ -13,7 +13,8 @@
         "BaseFontSize": 1,
         "BaseQuality": 100,
         "BoldFontName": "AlibabaPuHuiTi-2-85-Bold",
-        "BoldFontSize": 1
+        "BoldFontSize": 1,
+        "RadiusInfo": 0
     },
     "LOGO": {
         "isLogoLeft": true,
@@ -31,7 +32,7 @@
         "RightBottomType": "Param",
         "RightTopBold": true,
         "RightTopFontColor": "#212121",
-        "RightTopType": "Datetime"
+        "RightTopType": "LensMake_LensModel"
     },
     "Mode": {
         "MarkMode": "standard"

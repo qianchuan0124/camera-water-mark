@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QFontDatabase
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CardWidget, PrimaryPushButton
 from qfluentwidgets import FluentIcon as FIF
@@ -17,7 +17,7 @@ from qfluentwidgets import (
     MessageBoxBase,
     PushSettingCard,
     ScrollArea,
-    SettingCardGroup,
+    SettingCardGroup
 )
 
 from app.config import cfg, STYLE_PATH
@@ -27,12 +27,11 @@ from app.components.common_card import (
     ColorSettingCard,
     SwitchSettingCard
 )
-from app.config import ASSETS_PATH, CACHE_PATH, LOGO_LAYOUT, MARK_MODE
-from app.utils.mater_mark_preview import generate_preview
-from app.entity.constants import DISPLAY_TYPE, display_type_key, display_type_value
+from app.config import ASSETS_PATH, CACHE_PATH
 from app.thread.image_handle_thread import ImageHandleTask, ImageHandleThread, HandleProgress, ImageHandleStatus
 from app.components.common_item import LoadingButton
 from app.entity.font_manager import font_manager
+from app.entity.enums import DISPLAY_TYPE, LOGO_LAYOUT, MARK_MODE
 
 DEFAULT_BG = {
     "path": ASSETS_PATH / "default_bg.jpg",
@@ -79,6 +78,7 @@ class SettingInterface(QWidget):
         self.baseFontSizeValue = cfg.baseFontSize.value
         self.boldFontSizeValue = cfg.boldFontSize.value
         self.baseQualityValue = cfg.baseQuality.value
+        self.radiusInfoValue = cfg.radiusInfo.value
 
         # 模式选择
         self.modeValue = MARK_MODE.key(cfg.markMode.value)
@@ -96,19 +96,21 @@ class SettingInterface(QWidget):
         self.logoLayoutValue = LOGO_LAYOUT.LEFT if cfg.isLogoLeft else LOGO_LAYOUT.RIGHT
 
         # 布局样式
-        self.leftTopTypeValue = display_type_key(cfg.leftTopType.value)
+        self.leftTopTypeValue = DISPLAY_TYPE.from_str(cfg.leftTopType.value)
         self.leftTopFontColorValue = QColor(cfg.leftTopFontColor.value)
         self.leftTopBoldValue = cfg.leftTopBold.value
 
-        self.leftBottomTypeValue = display_type_key(cfg.leftBottomType.value)
+        self.leftBottomTypeValue = DISPLAY_TYPE.from_str(
+            cfg.leftBottomType.value)
         self.leftBottomFontColorValue = QColor(cfg.leftBottomFontColor.value)
         self.leftBottomBoldValue = cfg.leftBottomBold.value
 
-        self.rightTopTypeValue = display_type_key(cfg.rightTopType.value)
+        self.rightTopTypeValue = DISPLAY_TYPE.from_str(cfg.rightTopType.value)
         self.rightTopFontColorValue = QColor(cfg.rightTopFontColor.value)
         self.rightTopBoldValue = cfg.rightTopBold.value
 
-        self.rightBottomTypeValue = display_type_key(cfg.rightBottomType.value)
+        self.rightBottomTypeValue = DISPLAY_TYPE.from_str(
+            cfg.rightBottomType.value)
         self.rightBottomFontColorValue = QColor(cfg.rightBottomFontColor.value)
         self.rightBottomBoldValue = cfg.rightBottomBold.value
 
@@ -211,7 +213,7 @@ class SettingInterface(QWidget):
             self.tr("背景颜色"),
             self.tr("设置照片背景颜色"),
         )
-        
+
         # 标准字体
         self.baseFont = ComboBoxSettingCard(
             FIF.FONT,
@@ -264,6 +266,15 @@ class SettingInterface(QWidget):
             self.tr("基础质量"),
             self.tr("设置基础质量"),
             minimum=1,
+            maximum=100,
+        )
+
+        # 圆角设置
+        self.radiusInfo = SpinBoxSettingCard(
+            FIF.ALIGNMENT,
+            self.tr("圆角大小"),
+            self.tr("设置圆角大小"),
+            minimum=0,
             maximum=100,
         )
 
@@ -343,7 +354,7 @@ class SettingInterface(QWidget):
             FIF.VIEW,
             self.tr("左上角类型"),
             self.tr("设置左上角展示信息的类型"),
-            texts=DISPLAY_TYPE.keys(),
+            texts=DISPLAY_TYPE.all_descriptions(),
         )
 
         # 左上角字体颜色
@@ -368,7 +379,7 @@ class SettingInterface(QWidget):
             FIF.VIEW,
             self.tr("左下角类型"),
             self.tr("设置左下角展示信息的类型"),
-            texts=DISPLAY_TYPE.keys(),
+            texts=DISPLAY_TYPE.all_descriptions(),
         )
 
         # 左下角字体颜色
@@ -393,7 +404,7 @@ class SettingInterface(QWidget):
             FIF.VIEW,
             self.tr("右上角类型"),
             self.tr("设置左上角展示信息的类型"),
-            texts=DISPLAY_TYPE.keys(),
+            texts=DISPLAY_TYPE.all_descriptions(),
         )
 
         # 右上角字体颜色
@@ -418,7 +429,7 @@ class SettingInterface(QWidget):
             FIF.VIEW,
             self.tr("左下角类型"),
             self.tr("设置左下角展示信息的类型"),
-            texts=DISPLAY_TYPE.keys(),
+            texts=DISPLAY_TYPE.all_descriptions(),
         )
 
         # 右下角字体颜色
@@ -449,6 +460,7 @@ class SettingInterface(QWidget):
         self.baseGroup.addSettingCard(self.boldFont)
         self.baseGroup.addSettingCard(self.boldFontSize)
         self.baseGroup.addSettingCard(self.baseQuality)
+        self.baseGroup.addSettingCard(self.radiusInfo)
 
         # 模式
         self.modeGroup.addSettingCard(self.markMode)
@@ -495,7 +507,7 @@ class SettingInterface(QWidget):
         """初始化样式"""
         self.settingsWidget.setObjectName("settingsWidget")
         self.setStyleSheet(
-            """        
+            """
             SubtitleStyleInterface, #settingsWidget {
                 background-color: transparent;
             }
@@ -514,6 +526,7 @@ class SettingInterface(QWidget):
         self.baseFont.comboBox.setCurrentText(self.baseFontName)
         self.boldFont.comboBox.setCurrentText(self.boldFontName)
         self.baseQuality.setValue(self.baseQualityValue)
+        self.radiusInfo.setValue(self.radiusInfoValue)
         self.baseFontSize.setValue(self.baseFontSizeValue)
         self.boldFontSize.setValue(self.boldFontSizeValue)
 
@@ -534,22 +547,22 @@ class SettingInterface(QWidget):
 
         # 布局样式
         self.leftTopType.comboBox.setCurrentText(
-            self.leftTopTypeValue)
+            self.leftTopTypeValue.description)
         self.leftTopColor.setColor(self.leftTopFontColorValue)
         self.leftTopBold.setValue(self.leftTopBoldValue)
 
         self.leftBottomType.comboBox.setCurrentText(
-            self.leftBottomTypeValue)
+            self.leftBottomTypeValue.description)
         self.leftBottomColor.setColor(self.leftBottomFontColorValue)
         self.leftBottomBold.setValue(self.leftBottomBoldValue)
 
         self.rightTopType.comboBox.setCurrentText(
-            self.rightTopTypeValue)
+            self.rightTopTypeValue.description)
         self.rightTopColor.setColor(self.rightTopFontColorValue)
         self.rightTopBold.setValue(self.rightTopBoldValue)
 
         self.rightBottomType.comboBox.setCurrentText(
-            self.rightBottomTypeValue)
+            self.rightBottomTypeValue.description)
         self.rightBottomColor.setColor(self.rightBottomFontColorValue)
         self.rightBottomBold.setValue(self.rightBottomBoldValue)
 
@@ -557,7 +570,8 @@ class SettingInterface(QWidget):
 
     def __setInitHiddens(self):
         self.logoEnable.setHidden(self.modeValue.isSimple())
-        self.logoLayout.setHidden(True if self.modeValue.isSimple() else not self.logoEnable)
+        self.logoLayout.setHidden(
+            True if self.modeValue.isSimple() else not self.logoEnable)
 
         self.logoGroup.setHidden(self.modeValue.isSimple())
         self.layoutGroup.setHidden(self.modeValue.isSimple())
@@ -568,7 +582,7 @@ class SettingInterface(QWidget):
 
         # self.leftBottomType.setHidden(self.modeValue.isSimple())
         # self.leftBottomColor.setHidden(self.modeValue.isSimple())
-        # self.leftBottomBold.setHidden(self.modeValue.isSimple()) 
+        # self.leftBottomBold.setHidden(self.modeValue.isSimple())
 
         # self.rightTopType.setHidden(self.modeValue.isSimple())
         # self.rightTopColor.setHidden(self.modeValue.isSimple())
@@ -577,7 +591,6 @@ class SettingInterface(QWidget):
         # self.rightBottomType.setHidden(self.modeValue.isSimple())
         # self.rightBottomColor.setHidden(self.modeValue.isSimple())
         # self.rightBottomBold.setHidden(self.modeValue.isSimple())
-            
 
     def __setValues(self):
         """设置初始值"""
@@ -614,15 +627,19 @@ class SettingInterface(QWidget):
         # 基础样式
         self.baseBackground.colorChanged.connect(
             lambda text: setattr(self, "baseBackgroundValue", text))
-        self.baseFont.currentTextChanged.connect(lambda text: setattr(self, "baseFontName", text))
-        self.boldFont.currentTextChanged.connect(lambda text: setattr(self, "boldFontName", text))
+        self.baseFont.currentTextChanged.connect(
+            lambda text: setattr(self, "baseFontName", text))
+        self.boldFont.currentTextChanged.connect(
+            lambda text: setattr(self, "boldFontName", text))
         self.baseFontSize.valueChanged.connect(
             lambda text: setattr(self, "baseFontSizeValue", text))
         self.boldFontSize.valueChanged.connect(
             lambda text: setattr(self, "boldFontSizeValue", text))
         self.baseQuality.valueChanged.connect(
             lambda text: setattr(self, "baseQualityValue", text))
-        
+        self.radiusInfo.valueChanged.connect(
+            lambda text: setattr(self, "radiusInfoValue", text))
+
         # 模式
         self.markMode.currentTextChanged.connect(self.on_mark_mode_change)
 
@@ -633,22 +650,24 @@ class SettingInterface(QWidget):
             lambda text: setattr(self, "useEquivalentFocalValue", text))
         self.useOriginRatioPadding.checkedChanged.connect(
             lambda text: setattr(self, "useOriginRatioPaddingValue", text))
-        self.backgroundBlur.checkedChanged.connect(lambda text: setattr(self, "backgroundBlurValue", text))
+        self.backgroundBlur.checkedChanged.connect(
+            lambda text: setattr(self, "backgroundBlurValue", text))
         self.addShadow.checkedChanged.connect(
             lambda text: setattr(self, "addShadowValue", text))
         self.whiteMargin.checkedChanged.connect(
             lambda text: setattr(self, "whiteMarginValue", text))
-        
+
         # LOGO样式
 
         self.logoEnable.checkedChanged.connect(self.onLogoEnableChanged)
-        self.logoLayout.currentTextChanged.connect(lambda text: setattr(self, "logoLayoutValue", LOGO_LAYOUT.get_enum(text)))
+        self.logoLayout.currentTextChanged.connect(lambda text: setattr(
+            self, "logoLayoutValue", LOGO_LAYOUT.get_enum(text)))
 
         # 布局样式
 
         # 左上角
         self.leftTopType.currentTextChanged.connect(
-            lambda text: setattr(self, "leftTopTypeValue", text))
+            lambda text: setattr(self, "leftTopTypeValue", DISPLAY_TYPE.from_desc(text)))
         self.leftTopColor.colorChanged.connect(
             lambda text: setattr(self, "leftTopFontColorValue", text))
         self.leftTopBold.checkedChanged.connect(
@@ -656,7 +675,7 @@ class SettingInterface(QWidget):
 
         # 左下角
         self.leftBottomType.currentTextChanged.connect(
-            lambda text: setattr(self, "leftBottomTypeValue", text))
+            lambda text: setattr(self, "leftBottomTypeValue", DISPLAY_TYPE.from_desc(text)))
         self.leftBottomColor.colorChanged.connect(
             lambda text: setattr(self, "leftBottomFontColorValue", text))
         self.leftBottomBold.checkedChanged.connect(
@@ -664,7 +683,7 @@ class SettingInterface(QWidget):
 
         # 右上角
         self.rightTopType.currentTextChanged.connect(
-            lambda text: setattr(self, "rightTopTypeValue", text))
+            lambda text: setattr(self, "rightTopTypeValue", DISPLAY_TYPE.from_desc(text)))
         self.rightTopColor.colorChanged.connect(
             lambda text: setattr(self, "rightTopFontColorValue", text))
         self.rightTopBold.checkedChanged.connect(
@@ -672,7 +691,7 @@ class SettingInterface(QWidget):
 
         # 右下角
         self.rightBottomType.currentTextChanged.connect(
-            lambda text: setattr(self, "rightBottomTypeValue", text))
+            lambda text: setattr(self, "rightBottomTypeValue", DISPLAY_TYPE.from_desc(text)))
         self.rightBottomColor.colorChanged.connect(
             lambda text: setattr(self, "rightBottomFontColorValue", text))
         self.rightBottomBold.checkedChanged.connect(
@@ -683,11 +702,11 @@ class SettingInterface(QWidget):
         self.newStyleButton.clicked.connect(self.createNewStyle)
         self.openStyleFolderButton.clicked.connect(
             self.on_open_style_folder_clicked)
-        
+
     def on_mark_mode_change(self):
         self.modeValue = MARK_MODE.get_enum(self.markMode.comboBox.text())
         self.__setInitHiddens()
-        
+
     def onLogoEnableChanged(self, logoEnable):
         self.logoEnableValue = logoEnable
         self.logoLayout.setHidden(not self.logoEnableValue)
@@ -703,7 +722,6 @@ class SettingInterface(QWidget):
             duration=2000,
             parent=self,
         )
-            
 
     def on_open_style_folder_clicked(self):
         """打开样式文件夹"""
@@ -790,8 +808,8 @@ class SettingInterface(QWidget):
         self.boldFontName = style_content["Base"]["BoldFontName"]
         self.boldFontSizeValue = style_content["Base"]["BoldFontSize"]
         self.baseQualityValue = int(style_content["Base"]["BaseQuality"])
-        
-        
+        self.radiusInfoValue = int(style_content["Base"]["RadiusInfo"])
+
         # 模式
         self.modeValue = MARK_MODE.key(style_content["Mode"]["MarkMode"])
 
@@ -803,31 +821,32 @@ class SettingInterface(QWidget):
         self.whiteMarginValue = style_content["Global"]["WhiteMargin"]
         self.whiteMarginWidthValue = int(
             style_content["Global"]["WhiteMarginWidth"])
-        
+
         # LOGO布局
         self.logoEnableValue = style_content["LOGO"]["LogoEnable"]
-        self.logoLayoutValue = LOGO_LAYOUT.LEFT if style_content["LOGO"]["isLogoLeft"] else LOGO_LAYOUT.RIGHT
+        self.logoLayoutValue = LOGO_LAYOUT.LEFT if style_content[
+            "LOGO"]["isLogoLeft"] else LOGO_LAYOUT.RIGHT
 
         # 布局样式
-        self.leftTopTypeValue = display_type_key(
+        self.leftTopTypeValue = DISPLAY_TYPE.from_str(
             style_content["Layout"]["LeftTopType"])
         self.leftTopFontColorValue = QColor(
             style_content["Layout"]["LeftTopFontColor"])
         self.leftTopBoldValue = style_content["Layout"]["LeftTopBold"]
 
-        self.leftBottomTypeValue = display_type_key(
+        self.leftBottomTypeValue = DISPLAY_TYPE.from_str(
             style_content["Layout"]["LeftBottomType"])
         self.leftBottomFontColorValue = QColor(
             style_content["Layout"]["LeftBottomFontColor"])
         self.leftBottomBoldValue = style_content["Layout"]["LeftBottomBold"]
 
-        self.rightTopTypeValue = display_type_key(
+        self.rightTopTypeValue = DISPLAY_TYPE.from_str(
             style_content["Layout"]["RightTopType"])
         self.rightTopFontColorValue = QColor(
             style_content["Layout"]["RightTopFontColor"])
         self.rightTopBoldValue = style_content["Layout"]["RightTopBold"]
 
-        self.rightBottomTypeValue = display_type_key(
+        self.rightBottomTypeValue = DISPLAY_TYPE.from_str(
             style_content["Layout"]["RightBottomType"])
         self.rightBottomFontColorValue = QColor(
             style_content["Layout"]["RightBottomFontColor"])
@@ -907,6 +926,7 @@ class SettingInterface(QWidget):
         cfg.set(cfg.baseFontSize, self.baseFontSizeValue)
         cfg.set(cfg.boldFontSize, self.boldFontSizeValue)
         cfg.set(cfg.baseQuality, self.baseQualityValue)
+        cfg.set(cfg.radiusInfo, self.radiusInfoValue)
 
         # 模式
         cfg.set(cfg.markMode, self.modeValue.info())
@@ -924,21 +944,19 @@ class SettingInterface(QWidget):
         cfg.set(cfg.isLogoLeft, self.logoLayoutValue.isLeft())
 
         # 布局样式
-        cfg.set(cfg.leftTopType, display_type_value(self.leftTopTypeValue))
+        cfg.set(cfg.leftTopType, self.leftTopTypeValue.value)
         cfg.set(cfg.leftTopFontColor, self.leftTopFontColorValue.name())
         cfg.set(cfg.leftTopBold, self.leftTopBoldValue)
 
-        cfg.set(cfg.leftBottomType, display_type_value(
-            self.leftBottomTypeValue))
+        cfg.set(cfg.leftBottomType, self.leftBottomTypeValue.value)
         cfg.set(cfg.leftBottomFontColor, self.leftBottomFontColorValue.name())
         cfg.set(cfg.leftBottomBold, self.leftBottomBoldValue)
 
-        cfg.set(cfg.rightTopType, display_type_value(self.rightTopTypeValue))
+        cfg.set(cfg.rightTopType, self.rightTopTypeValue.value)
         cfg.set(cfg.rightTopFontColor, self.rightTopFontColorValue.name())
         cfg.set(cfg.rightTopBold, self.rightTopBoldValue)
 
-        cfg.set(cfg.rightBottomType, display_type_value(
-            self.rightBottomTypeValue))
+        cfg.set(cfg.rightBottomType, self.rightBottomTypeValue.value)
         cfg.set(cfg.rightBottomFontColor,
                 self.rightBottomFontColorValue.name())
         cfg.set(cfg.rightBottomBold, self.rightBottomBoldValue)

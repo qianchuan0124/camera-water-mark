@@ -1,7 +1,5 @@
-import os
 import logging
 from pathlib import Path
-from enum import Enum
 from qfluentwidgets import (
     QConfig,
     qconfig,
@@ -23,37 +21,6 @@ FONT_PATH = RESOURCE_PATH / "fonts"
 ENCODING = 'gbk'
 
 
-class SupportedImageFormats(Enum):
-    """支持的视频格式"""
-    JPEG = "jpeg"
-    JPG = "jpg"
-    PNG = "png"
-
-
-class ElementConfig(object):
-    """
-    布局中元素的配置对象
-    """
-
-    def __init__(self, element):
-        self.element = element
-
-    def get_name(self):
-        return self.element['name']
-
-    def is_bold(self):
-        return self.element['is_bold']
-
-    def get_value(self):
-        return self.element['value'] if 'value' in self.element else None
-
-    def get_color(self):
-        if 'color' in self.element:
-            return self.element['color']
-        else:
-            return '#212121'
-
-
 LOGO_PATH = {
     "default": Path(f"{RESOURCE_PATH}/logos/empty.png"),
     "APPLE": Path(f"{RESOURCE_PATH}/logos/apple.png"),
@@ -72,61 +39,18 @@ LOGO_PATH = {
     "SONY": Path(f"{RESOURCE_PATH}/logos/sony.png"),
 }
 
-class LOGO_LAYOUT(Enum):
-    LEFT = "LOGO居左"
-    RIGHT = "LOGO居右"
-
-    def get_enum(value):
-        for member in LOGO_LAYOUT:
-            if member.value == value:
-                return member
-        return LOGO_LAYOUT.LEFT
-    
-    def isLeft(self):
-        return self == LOGO_LAYOUT.LEFT
-    
-    def all_values():
-        values = [member.value for member in LOGO_LAYOUT]
-        return values
-    
-class MARK_MODE(Enum):
-    STANDARD = "标准模式"
-    SIMPLE = "简易模式"
-
-    def get_enum(value):
-        for member in MARK_MODE:
-            if member.value == value:
-                return member
-        return MARK_MODE.STANDARD
-
-    def info(self):
-        if self == MARK_MODE.SIMPLE:
-            return "simple"
-        else:
-            return "standard"
-
-    def key(value):
-        if value == "simple":
-            return MARK_MODE.SIMPLE
-        else:
-            return MARK_MODE.STANDARD
-        
-    def all_values():
-        values = [member.value for member in MARK_MODE]
-        return values
-    
-    def isSimple(self):
-        return self == MARK_MODE.SIMPLE 
-
 
 class Config(QConfig):
     styleName = ConfigItem("Style", "StyleName", "default")
 
     baseQuality = ConfigItem("Base", "BaseQuality", 100)
-    baseFontName = ConfigItem("Base", "BaseFontName", "AlibabaPuHuiTi-2-45-Light")
-    boldFontName = ConfigItem("Base", "BoldFontName", "AlibabaPuHuiTi-2-45-Bold")
+    baseFontName = ConfigItem("Base", "BaseFontName",
+                              "AlibabaPuHuiTi-2-45-Light")
+    boldFontName = ConfigItem("Base", "BoldFontName",
+                              "AlibabaPuHuiTi-2-45-Bold")
     baseFontSize = ConfigItem("Base", "BaseFontSize", 1)
     boldFontSize = ConfigItem("Base", "BoldFontSize", 1)
+    radiusInfo = ConfigItem("Base", "RadiusInfo", 20)
     backgroundColor = ConfigItem("Base", "BackgroundColor", "#ffffff")
 
     markMode = ConfigItem("Mode", "MarkMode", "standard")
