@@ -14,7 +14,7 @@
         "BaseQuality": 100,
         "BoldFontName": "AlibabaPuHuiTi-2-85-Bold",
         "BoldFontSize": 1,
-        "RadiusInfo": 0
+        "RadiusInfo": 30
     },
     "LOGO": {
         "isLogoLeft": true,
@@ -32,7 +32,7 @@
         "RightBottomType": "Param",
         "RightTopBold": true,
         "RightTopFontColor": "#212121",
-        "RightTopType": "LensMake_LensModel"
+        "RightTopType": "CameraMake_CameraModel"
     },
     "Mode": {
         "MarkMode": "standard"

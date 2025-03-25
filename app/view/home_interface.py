@@ -1,22 +1,45 @@
 import os
-import platform
+import json
+import sys
 import subprocess
 from typing import List
 from pathlib import Path
 from PyQt5.QtCore import Qt, QStandardPaths
 from PyQt5.QtGui import QColor
-from qfluentwidgets import FluentIcon as FIF
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHeaderView, QTableWidgetItem, QWidget, QHBoxLayout, QFileDialog
-from qfluentwidgets import TableWidget, TableItemDelegate, HyperlinkButton
-from qfluentwidgets import FluentIcon
-from app.thread.image_handle_thread import ImageHandleThread, ImageHandleTask, ImageHandleStatus, HandleProgress
-from qfluentwidgets import ProgressBar, BodyLabel, InfoBar, InfoBarPosition
+from PyQt5.QtWidgets import (
+    QWidget, 
+    QVBoxLayout, 
+    QHeaderView, 
+    QTableWidgetItem, 
+    QWidget, 
+    QHBoxLayout, 
+    QFileDialog
+)
+from qfluentwidgets import (
+    TableWidget, 
+    TableItemDelegate, 
+    HyperlinkButton, 
+    FluentIcon, 
+    FluentIcon as FIF, 
+    ProgressBar, 
+    BodyLabel, 
+    InfoBar, 
+    InfoBarPosition
+)
+from app.thread.image_handle_thread import (
+    ImageHandleThread, 
+    ImageHandleTask,
+    ImageHandleStatus,
+    HandleProgress
+)
 from app.config import OUTPUT_PATH
 from app.entity.enums import SupportedImageFormats
 from app.entity.picutre_item import PictureItem
 from app.components.common_item import TapButton, SearchInput
 from app.view.log_window import LogWindow
 from app.utils.logger import setup_logger
+from app.utils.image_handle import get_exif
+from app.components.custom_scroll_message_box import CustomScrollableMessageBox
 logger = setup_logger("home")
 
 # 打开文件夹，选中多张图片，形成表格
@@ -235,9 +258,9 @@ class HomeInterface(QWidget):
         table = TableWidget(self)
         table.setEditTriggers(TableWidget.NoEditTriggers)
         table.setSelectionMode(TableWidget.NoSelection)
-        table.setColumnCount(4)
+        table.setColumnCount(3)
         table.setHorizontalHeaderLabels(
-            [self.tr("名称"), self.tr("位置"), self.tr("操作"), self.tr("状态")]
+            [self.tr("名称"), self.tr("操作"), self.tr("状态")]
         )
 
         # 设置表格样式
@@ -250,11 +273,9 @@ class HomeInterface(QWidget):
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.Fixed)
         header.setSectionResizeMode(2, QHeaderView.Fixed)
-        header.setSectionResizeMode(3, QHeaderView.Fixed)
 
-        table.setColumnWidth(1, 120)
+        table.setColumnWidth(1, 240)
         table.setColumnWidth(2, 120)
-        table.setColumnWidth(3, 120)
 
         # 设置行高
         row_height = 45
@@ -281,42 +302,33 @@ class HomeInterface(QWidget):
         name_item.setTextAlignment(Qt.AlignCenter)
         self.picture_table.setItem(row, 0, name_item)
 
-        # 原始路径
-        original_path_container = QWidget()
-        original_path_layout = QHBoxLayout(original_path_container)
-        original_path_layout.setContentsMargins(4, 4, 4, 4)
+        # 删除
+        action_container = QWidget()
+        action_layout = QHBoxLayout(action_container)
+        action_layout.setContentsMargins(4, 4, 4, 4)
 
-        original_path_btn = HyperlinkButton(
-            "",
-            self.tr("当前路径"),
-            parent=self,
-        )
+        original_path_btn = HyperlinkButton("", "", parent=self)
         original_path_btn.setIcon(FIF.FOLDER)
         original_path_btn.clicked.connect(
             lambda checked, p=model.original_path: self._open_origin_path(p))
-        original_path_layout.addStretch()
-        original_path_layout.addWidget(original_path_btn)
-        original_path_layout.addStretch()
-        self.picture_table.setCellWidget(row, 1, original_path_container)
 
-        # 删除
-        delete_container = QWidget()
-        delete_layout = QHBoxLayout(delete_container)
-        delete_layout.setContentsMargins(4, 4, 4, 4)
-
-        delete_btn = HyperlinkButton(
-            "",
-            self.tr("删除"),
-            parent=self,
-        )
+        delete_btn = HyperlinkButton("", "", parent=self)
         delete_btn.setIcon(FIF.DELETE)
         delete_btn.setEnabled(self.isEnable)
         delete_btn.clicked.connect(
             lambda checked, r=row: self._delete_model(r))
-        delete_layout.addStretch()
-        delete_layout.addWidget(delete_btn)
-        delete_layout.addStretch()
-        self.picture_table.setCellWidget(row, 2, delete_container)
+        
+        info_btn = HyperlinkButton("", "", self)
+        info_btn.setIcon(FIF.INFO)
+        info_btn.clicked.connect(
+            lambda checked, r=row: self._info_model(r))
+
+        action_layout.addStretch()
+        action_layout.addWidget(original_path_btn)
+        action_layout.addWidget(delete_btn)
+        action_layout.addWidget(info_btn)
+        action_layout.addStretch()
+        self.picture_table.setCellWidget(row, 1, action_container)
 
         # 状态
         status_item = QTableWidgetItem(
@@ -327,30 +339,32 @@ class HomeInterface(QWidget):
             status_item.setForeground(QColor("#F14A5B"))
             status_item.setToolTip(model.errorInfo)
         status_item.setTextAlignment(Qt.AlignCenter)
-        self.picture_table.setItem(row, 3, status_item)
+        self.picture_table.setItem(row, 2, status_item)
 
     def _open_origin_path(self, path):
         """打开原始路径对应的文件夹"""
         self.open_folder(os.path.dirname(path))
 
     def open_folder(self, folder_path):
-        system_platform = platform.system()
-        try:
-            if system_platform == "Windows":
-                subprocess.run(["explorer", folder_path], check=True)
-            elif system_platform == "Darwin":  # macOS
-                subprocess.run(["open", folder_path], check=True)
-            elif system_platform == "Linux":
-                subprocess.run(["xdg-open", folder_path], check=True)
-            else:
-                logger.error(f"不支持的操作系统: {system_platform}")
-        except Exception as e:
-            logger.error(f"打开文件夹失败: {e}")
+        """打开样式文件夹"""
+        if sys.platform == "win32":
+            os.startfile(folder_path)
+        elif sys.platform == "darwin":  # macOS
+            subprocess.run(["open", folder_path])
+        else:  # Linux
+            subprocess.run(["xdg-open", folder_path])
 
     def _delete_model(self, row):
         """删除模型"""
         self.picture_models.pop(row)
         self._populate_model_table()
+
+    def _info_model(self, row):
+        item: PictureItem = self.picture_models[row]
+        exif = get_exif(item.original_path)
+        content = json.dumps(exif, ensure_ascii=False, indent=4)
+        w = CustomScrollableMessageBox(self.window(), content)
+        w.exec()
 
     def dragEnterEvent(self, event):
         event.accept() if event.mimeData().hasUrls() else event.ignore()

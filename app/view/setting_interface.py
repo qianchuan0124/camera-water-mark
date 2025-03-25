@@ -7,17 +7,19 @@ import json
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CardWidget, PrimaryPushButton
-from qfluentwidgets import FluentIcon as FIF
 from qfluentwidgets import (
     ImageLabel,
     InfoBar,
+    BodyLabel, 
+    CardWidget, 
+    PrimaryPushButton,
     InfoBarPosition,
     LineEdit,
     MessageBoxBase,
     PushSettingCard,
     ScrollArea,
-    SettingCardGroup
+    SettingCardGroup,
+    FluentIcon as FIF
 )
 
 from app.config import cfg, STYLE_PATH

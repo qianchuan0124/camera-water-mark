@@ -5,7 +5,7 @@ import subprocess
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QVBoxLayout, QWidget, QHBoxLayout
-from qfluentwidgets import setTheme, Theme, FluentStyleSheet, TextEdit, isDarkTheme, PushButton
+from qfluentwidgets import setTheme, Theme, FluentStyleSheet, TextEdit, PushButton
 
 from app.config import LOG_PATH, RESOURCE_PATH
 
