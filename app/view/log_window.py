@@ -164,9 +164,9 @@ class LogWindow(QWidget):
             if system_platform == "Windows":
                 os.startfile(log_folder_path)
             elif system_platform == "Darwin":  # macOS
-                subprocess.run(["open", log_folder_path])
+                subprocess.run(["open", log_folder_path], creationflags=subprocess.CREATE_NO_WINDOW)
             elif system_platform == "Linux":
-                subprocess.run(["xdg-open", log_folder_path])
+                subprocess.run(["xdg-open", log_folder_path], creationflags=subprocess.CREATE_NO_WINDOW)
             else:
                 self.log_text.setPlainText(f"不支持的操作系统: {system_platform}")
         except Exception as e:

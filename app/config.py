@@ -80,6 +80,7 @@ class Config(QConfig):
     boldFontSize = ConfigItem("Base", "BoldFontSize", 1)
     radiusInfo = ConfigItem("Base", "RadiusInfo", 20)
     backgroundColor = ConfigItem("Base", "BackgroundColor", "#ffffff")
+    targetPath = ConfigItem("Base", "TargetPath", str(OUTPUT_PATH))
 
     markMode = ConfigItem("Mode", "MarkMode", "standard")
 

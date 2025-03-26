@@ -32,7 +32,7 @@ from app.thread.image_handle_thread import (
     ImageHandleStatus,
     HandleProgress
 )
-from app.config import OUTPUT_PATH, ASSETS_PATH
+from app.config import cfg, ASSETS_PATH
 from app.entity.enums import SupportedImageFormats
 from app.entity.picutre_item import PictureItem
 from app.components.common_item import TipButton, SearchInput, ListActionButton
@@ -52,7 +52,7 @@ class HomeInterface(QWidget):
         self.setStyleSheet('HomeInterface {background-color: #f0f0f0;}')
         self.setAcceptDrops(True)
         self.log_window = None
-        self.target_path = OUTPUT_PATH
+        self.target_path = cfg.targetPath.value
         self.isEnable = True
 
         self.setup_ui()
@@ -84,7 +84,7 @@ class HomeInterface(QWidget):
         self.header_layout.addWidget(title_label)
 
         self.search_input = SearchInput(self)
-        self.search_input.setText(str(OUTPUT_PATH))
+        self.search_input.setText(self.target_path)
         self.header_layout.addWidget(self.search_input)
 
         self.target_button = TipButton(self, self.tr("更新目标文件路径"))
@@ -207,7 +207,7 @@ class HomeInterface(QWidget):
                     self.picture_models.append(PictureItem(
                         name=os.path.basename(file_path),
                         original_path=file_path,
-                        target_path=OUTPUT_PATH,
+                        target_path=self.target_path,
                         status=ImageHandleStatus.WAITING
                     ))
             if has_added:
@@ -232,6 +232,7 @@ class HomeInterface(QWidget):
                 parent=self,
             )
             return
+        cfg.set(cfg.targetPath, self.target_path)
         tasks: List[ImageHandleTask] = []
         for model in self.picture_models:
             target_path = Path(f"{self.target_path}/{model.name}")
@@ -402,7 +403,7 @@ class HomeInterface(QWidget):
                     self.picture_models.append(PictureItem(
                         name=os.path.basename(file_path),
                         original_path=file_path,
-                        target_path=OUTPUT_PATH,
+                        target_path=self.target_path,
                         status=ImageHandleStatus.WAITING
                     ))
                     self._populate_model_table()

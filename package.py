@@ -57,6 +57,7 @@ def run_inno_setup(iss_file_path, iscc_path=None):
             stderr=subprocess.STDOUT,
             text=True,
             encoding="utf-8",
+            creationflags=subprocess.CREATE_NO_WINDOW
         )
         
         while True:
@@ -78,11 +79,11 @@ def run_inno_setup(iss_file_path, iscc_path=None):
 
 def open_folder(folder_path):
     if platform.system() == 'Windows':
-        subprocess.Popen(f'explorer "{folder_path}"')
+        subprocess.Popen(f'explorer "{folder_path}"', creationflags=subprocess.CREATE_NO_WINDOW)
     elif platform.system() == 'Darwin':  # macOS
-        subprocess.Popen(['open', folder_path])
+        subprocess.Popen(['open', folder_path], creationflags=subprocess.CREATE_NO_WINDOW)
     elif platform.system() == 'Linux':
-        subprocess.Popen(['xdg-open', folder_path])
+        subprocess.Popen(['xdg-open', folder_path], creationflags=subprocess.CREATE_NO_WINDOW)
     else:
         print("未支持的操作系统")
 
