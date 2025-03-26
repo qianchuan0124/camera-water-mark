@@ -1,3 +1,5 @@
+import sys
+import platform
 import logging
 from pathlib import Path
 from qfluentwidgets import (
@@ -7,18 +9,44 @@ from qfluentwidgets import (
 )
 
 LOG_LEVEL = logging.INFO
-ROOT_PATH = Path(__file__).parent
-APPDATA_PATH = ROOT_PATH.parent / "AppData"
-RESOURCE_PATH = ROOT_PATH.parent / "resource"
-LOG_PATH = APPDATA_PATH / "logs"
-ASSETS_PATH = RESOURCE_PATH / "assets"
-CACHE_PATH = APPDATA_PATH / "cache"
-SETTINGS_PATH = APPDATA_PATH / "settings.json"
-STYLE_PATH = RESOURCE_PATH / "style"
-EXIFTOOL_PATH = APPDATA_PATH / "exiftool"
-OUTPUT_PATH = APPDATA_PATH / "output"
-FONT_PATH = RESOURCE_PATH / "fonts"
-ENCODING = 'gbk'
+
+if getattr(sys, 'frozen', False):
+    ROOT_PATH = Path(__file__).parent.parent
+    if platform.system() == 'Windows':
+        APPDATA_PATH = ROOT_PATH.parent / "AppData"
+        RESOURCE_PATH = ROOT_PATH.parent / "resource"
+        LOG_PATH = APPDATA_PATH / "logs"
+        ASSETS_PATH = RESOURCE_PATH / "assets"
+        CACHE_PATH = APPDATA_PATH / "cache"
+        SETTINGS_PATH = APPDATA_PATH / "settings.json"
+        STYLE_PATH = RESOURCE_PATH / "style"
+        EXIFTOOL_PATH = APPDATA_PATH / "exiftool"
+        OUTPUT_PATH = APPDATA_PATH / "output"
+        FONT_PATH = RESOURCE_PATH / "fonts"
+    else:
+        APPDATA_PATH = f"{ROOT_PATH}/AppData"
+        RESOURCE_PATH = f"{ROOT_PATH}/resource"
+        LOG_PATH = f"{APPDATA_PATH}/logs"
+        ASSETS_PATH = f"{RESOURCE_PATH}/assets"
+        CACHE_PATH = f"{APPDATA_PATH}/cache"
+        SETTINGS_PATH = f"{APPDATA_PATH}/settings.json"
+        STYLE_PATH = f"{RESOURCE_PATH}/style"
+        EXIFTOOL_PATH = f"{APPDATA_PATH}/exiftool"
+        OUTPUT_PATH = f"{APPDATA_PATH}/output"
+        FONT_PATH = f"{RESOURCE_PATH}/fonts"
+else:
+    ROOT_PATH = Path(__file__).parent
+    APPDATA_PATH = ROOT_PATH.parent / "AppData"
+    RESOURCE_PATH = ROOT_PATH.parent / "resource"
+    LOG_PATH = APPDATA_PATH / "logs"
+    ASSETS_PATH = RESOURCE_PATH / "assets"
+    CACHE_PATH = APPDATA_PATH / "cache"
+    SETTINGS_PATH = APPDATA_PATH / "settings.json"
+    STYLE_PATH = RESOURCE_PATH / "style"
+    EXIFTOOL_PATH = APPDATA_PATH / "exiftool"
+    OUTPUT_PATH = APPDATA_PATH / "output"
+    FONT_PATH = RESOURCE_PATH / "fonts"
+
 
 
 LOGO_PATH = {

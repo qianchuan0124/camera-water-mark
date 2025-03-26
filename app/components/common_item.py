@@ -1,12 +1,19 @@
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QHBoxLayout, QSizePolicy
-from qfluentwidgets import LineEdit, ToolButton, FluentIcon, FluentIconBase, Theme, isDarkTheme
-from PyQt5.QtWidgets import QToolTip, QPushButton, QLabel
-from PyQt5.QtGui import QMovie, QIcon
-from PyQt5.QtCore import Qt
-from app.config import ASSETS_PATH
 from pathlib import Path
+from PyQt5.QtCore import Qt, QSize
+from app.config import ASSETS_PATH
+from PyQt5.QtGui import QMovie, QIcon
+from qfluentwidgets import (
+    ToolTipFilter,
+    PrimaryToolButton,
+    FluentIcon,
+    FluentIconBase,
+    Theme,
+    isDarkTheme,
+    ToolTipPosition,
+    LineEdit,
+    HyperlinkButton
+)
+from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QLabel
 
 LOADING_GIF = f"{ASSETS_PATH}/loading.gif"
 
@@ -93,38 +100,23 @@ class LoadingButton(QPushButton):
         self.movie.stop()
 
 
-class TapButton(ToolButton):
+class ListActionButton(HyperlinkButton):
     def __init__(self, parent=None, tips=None):
-        super(TapButton, self).__init__(parent)
-        self.setFixedSize(40, 40)
-        self.setStyleSheet(
-            self.styleSheet()
-            + """
-            QToolButton {
-                border-radius: 20px;
-                background-color: #2F8D63;
-            }
-            QToolButton:hover {
-                background-color: #2E805C;
-            }
-            QToolButton:pressed {
-                background-color: #2E905C;
-            }
-        """
-        )
+        super(ListActionButton, self).__init__(parent)
+        self.installEventFilter(ToolTipFilter(
+            self, showDelay=300, position=ToolTipPosition.TOP))
         if tips:
             self.setToolTip(tips)
 
-    def enterEvent(self, event):
-        """鼠标进入按钮时显示提示"""
-        QToolTip.showText(self.mapToGlobal(
-            self.rect().bottomLeft()), self.toolTip())
-        super().enterEvent(event)
 
-    def leaveEvent(self, event):
-        """鼠标离开按钮时隐藏提示"""
-        QToolTip.hideText()
-        super().leaveEvent(event)
+class TipButton(PrimaryToolButton):
+    def __init__(self, parent=None, tips=None):
+        super(TipButton, self).__init__(parent)
+        self.setMinimumHeight(38)
+        self.installEventFilter(ToolTipFilter(
+            self, showDelay=300, position=ToolTipPosition.TOP))
+        if tips:
+            self.setToolTip(tips)
 
 
 class SearchInput(LineEdit):

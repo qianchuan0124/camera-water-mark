@@ -9,6 +9,7 @@ from qfluentwidgets.common.icon import FluentIconBase, drawIcon
 from qfluentwidgets.common.style_sheet import FluentStyleSheet
 from qfluentwidgets.components.widgets.icon_widget import IconWidget
 
+
 class SettingIconWidget(IconWidget):
 
     def paintEvent(self, e):
@@ -17,8 +18,10 @@ class SettingIconWidget(IconWidget):
         if not self.isEnabled():
             painter.setOpacity(0.36)
 
-        painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
+        painter.setRenderHints(QPainter.Antialiasing |
+                               QPainter.SmoothPixmapTransform)
         drawIcon(self._icon, painter, self.rect())
+
 
 class SettingCard(QFrame):
     """Setting card"""
@@ -273,7 +276,7 @@ class SwitchSettingCard(SettingCard):
         super().__init__(icon, title, content, parent)
         self.configItem = configItem
         self.switchButton = SwitchButton(
-            self.tr('Off'), self, IndicatorPosition.RIGHT)
+            self.tr('否'), self, IndicatorPosition.RIGHT)
 
         if configItem:
             self.setValue(qconfig.get(configItem))
@@ -296,14 +299,14 @@ class SwitchSettingCard(SettingCard):
 
         self.switchButton.setChecked(isChecked)
         self.switchButton.setText(
-            self.tr('On') if isChecked else self.tr('Off'))
+            self.tr('是') if isChecked else self.tr('否'))
 
     def setChecked(self, isChecked: bool):
         self.setValue(isChecked)
 
     def isChecked(self):
         return self.switchButton.isChecked()
-    
+
 
 class ColorSettingCard(SettingCard):
     """带颜色选择器的设置卡片"""
@@ -375,7 +378,8 @@ class ColorPickerButton(QToolButton):
     def __showColorDialog(self):
         """show color dialog"""
         w = ColorDialog(
-            self.color, self.tr("Choose ") + self.title, self.window(), self.enableAlpha
+            self.color, self.tr("Choose ") +
+            self.title, self.window(), self.enableAlpha
         )
         w.colorChanged.connect(self.__onColorChanged)
         w.exec()
@@ -393,7 +397,8 @@ class ColorPickerButton(QToolButton):
     def paintEvent(self, e):
         painter = QPainter(self)
         painter.setRenderHints(QPainter.Antialiasing)
-        pc = QColor(255, 255, 255, 10) if isDarkTheme() else QColor(234, 234, 234)
+        pc = QColor(255, 255, 255, 10) if isDarkTheme(
+        ) else QColor(234, 234, 234)
         painter.setPen(pc)
 
         color = QColor(self.color)

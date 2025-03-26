@@ -33,8 +33,14 @@ def get_exif(path) -> dict:
     """
     exif_dict = {}
     try:
-        output_bytes = subprocess.check_output(
-            [exiftool_command(), '-d', '%Y-%m-%d %H:%M:%S%3f%z', path])
+        command = [exiftool_command(), '-d', '%Y-%m-%d %H:%M:%S%3f%z', path]
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            creationflags=subprocess.CREATE_NO_WINDOW  # 防止创建控制台窗口
+        )
+        output_bytes, _ = process.communicate()
         output = output_bytes.decode('utf-8', errors='ignore')
 
         lines = output.splitlines()

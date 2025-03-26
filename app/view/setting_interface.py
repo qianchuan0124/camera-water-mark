@@ -10,8 +10,8 @@ from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     ImageLabel,
     InfoBar,
-    BodyLabel, 
-    CardWidget, 
+    BodyLabel,
+    CardWidget,
     PrimaryPushButton,
     InfoBarPosition,
     LineEdit,
@@ -745,11 +745,18 @@ class SettingInterface(QWidget):
             Path(DEFAULT_BG["path"]), cache_preview)
         self.preview_thread = ImageHandleThread([self.preview_task])
         self.preview_thread.finished.connect(self.onPreviewReady)
+        self.refreshButtons(False)
         self.preview_thread.start()
+
+    def refreshButtons(self, isEnable):
+        self.saveButton.setEnabled(isEnable)
+        self.resetButton.setEnabled(isEnable)
+        self.renderButton.setEnabled(isEnable)
 
     def onPreviewReady(self, progress: HandleProgress):
         """预览图片生成完成的回调"""
         task = progress.tasks[0]
+        self.refreshButtons(True)
         if task and task.status == ImageHandleStatus.FINISHED:
             self.renderButton.stop_loading()
             self.previewImage.setImage(str(task.target_path))

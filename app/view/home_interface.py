@@ -5,37 +5,37 @@ import subprocess
 from typing import List
 from pathlib import Path
 from PyQt5.QtCore import Qt, QStandardPaths
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import (
-    QWidget, 
-    QVBoxLayout, 
-    QHeaderView, 
-    QTableWidgetItem, 
-    QWidget, 
-    QHBoxLayout, 
-    QFileDialog
+    QWidget,
+    QVBoxLayout,
+    QHeaderView,
+    QTableWidgetItem,
+    QWidget,
+    QHBoxLayout,
+    QFileDialog,
+    QApplication
 )
 from qfluentwidgets import (
-    TableWidget, 
-    TableItemDelegate, 
-    HyperlinkButton, 
-    FluentIcon, 
-    FluentIcon as FIF, 
-    ProgressBar, 
-    BodyLabel, 
-    InfoBar, 
-    InfoBarPosition
+    TableWidget,
+    TableItemDelegate,
+    HyperlinkButton,
+    FluentIcon as FIF,
+    ProgressBar,
+    BodyLabel,
+    InfoBar,
+    InfoBarPosition,
 )
 from app.thread.image_handle_thread import (
-    ImageHandleThread, 
+    ImageHandleThread,
     ImageHandleTask,
     ImageHandleStatus,
     HandleProgress
 )
-from app.config import OUTPUT_PATH
+from app.config import OUTPUT_PATH, ASSETS_PATH
 from app.entity.enums import SupportedImageFormats
 from app.entity.picutre_item import PictureItem
-from app.components.common_item import TapButton, SearchInput
+from app.components.common_item import TipButton, SearchInput, ListActionButton
 from app.view.log_window import LogWindow
 from app.utils.logger import setup_logger
 from app.utils.image_handle import get_exif
@@ -87,20 +87,20 @@ class HomeInterface(QWidget):
         self.search_input.setText(str(OUTPUT_PATH))
         self.header_layout.addWidget(self.search_input)
 
-        self.target_button = TapButton(self, self.tr("更新目标路径"))
-        self.target_button.setIcon(FIF.FOLDER)
+        self.target_button = TipButton(self, self.tr("更新目标文件路径"))
+        self.target_button.setIcon(QIcon(f"{ASSETS_PATH}/folder.svg"))
         self.header_layout.addWidget(self.target_button)
 
-        self.add_button = TapButton(self, self.tr("添加图片"))
-        self.add_button.setIcon(FIF.ADD)
+        self.add_button = TipButton(self, self.tr("添加图片"))
+        self.add_button.setIcon(QIcon(f"{ASSETS_PATH}/add.svg"))
         self.header_layout.addWidget(self.add_button)
 
-        self.clean_button = TapButton(self, self.tr("清空图片"))
-        self.clean_button.setIcon(FIF.DELETE)
+        self.clean_button = TipButton(self, self.tr("清空图片"))
+        self.clean_button.setIcon(QIcon(f"{ASSETS_PATH}/delete.svg"))
         self.header_layout.addWidget(self.clean_button)
 
-        self.start_button = TapButton(self, self.tr("开始处理"))
-        self.start_button.setIcon(FluentIcon.PLAY)
+        self.start_button = TipButton(self, self.tr("开始处理"))
+        self.start_button.setIcon(QIcon(f"{ASSETS_PATH}/play.svg"))
         self.header_layout.addWidget(self.start_button)
 
         self.main_layout.addLayout(self.header_layout)
@@ -131,7 +131,7 @@ class HomeInterface(QWidget):
             + """
             QPushButton {
                 font-size: 12px;
-                color: #2F8D63;
+                color: #58f4ff;
                 text-decoration: underline;
             }
         """
@@ -307,18 +307,19 @@ class HomeInterface(QWidget):
         action_layout = QHBoxLayout(action_container)
         action_layout.setContentsMargins(4, 4, 4, 4)
 
-        original_path_btn = HyperlinkButton("", "", parent=self)
+        original_path_btn = ListActionButton(
+            parent=self, tips=self.tr("打开源文件目录"))
         original_path_btn.setIcon(FIF.FOLDER)
         original_path_btn.clicked.connect(
             lambda checked, p=model.original_path: self._open_origin_path(p))
 
-        delete_btn = HyperlinkButton("", "", parent=self)
+        delete_btn = ListActionButton(parent=self, tips=self.tr("删除文件"))
         delete_btn.setIcon(FIF.DELETE)
         delete_btn.setEnabled(self.isEnable)
         delete_btn.clicked.connect(
             lambda checked, r=row: self._delete_model(r))
-        
-        info_btn = HyperlinkButton("", "", self)
+
+        info_btn = ListActionButton(self, tips=self.tr("查看元信息"))
         info_btn.setIcon(FIF.INFO)
         info_btn.clicked.connect(
             lambda checked, r=row: self._info_model(r))
@@ -364,7 +365,14 @@ class HomeInterface(QWidget):
         exif = get_exif(item.original_path)
         content = json.dumps(exif, ensure_ascii=False, indent=4)
         w = CustomScrollableMessageBox(self.window(), content)
-        w.exec()
+        if w.exec():
+            QApplication.clipboard().setText(content)
+            InfoBar.success(
+                self.tr("复制成功"),
+                self.tr("复制图片信息成功"),
+                duration=1500,
+                parent=self,
+            )
 
     def dragEnterEvent(self, event):
         event.accept() if event.mimeData().hasUrls() else event.ignore()

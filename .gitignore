@@ -21,3 +21,4 @@ logs
 /build/
 /dist/
 /app/resource/bin/
+*.exe
