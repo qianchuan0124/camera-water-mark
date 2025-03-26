@@ -35,9 +35,9 @@ ChangesAssociations=yes
 DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
-OutputDir=E:\Workspace\camera-water\my-demo
+OutputDir=E:\Workspace\camera-water
 OutputBaseFilename=WaterMarkSetup
-SetupIconFile=E:\Workspace\camera-water\my-demo\logo.ico
+SetupIconFile=E:\Workspace\camera-water\logo.ico
 SolidCompression=yes
 WizardStyle=modern
 
@@ -48,11 +48,11 @@ Name: "chinese"; MessagesFile: "compiler:Languages\Chinese.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkablealone
 
 [Files]
-Source: "E:\Workspace\camera-water\my-demo\dist\水印助手\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Workspace\camera-water\my-demo\dist\水印助手\_internal\*"; DestDir: "{app}\_internal\"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "E:\Workspace\camera-water\my-demo\dist\水印助手\AppData\*"; DestDir: "{app}\AppData\"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "E:\Workspace\camera-water\my-demo\dist\水印助手\app\*"; DestDir: "{app}\app\"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "E:\Workspace\camera-water\my-demo\dist\水印助手\resource\*"; DestDir: "{app}\resource\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "E:\Workspace\camera-water\dist\水印助手\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\Workspace\camera-water\dist\水印助手\_internal\*"; DestDir: "{app}\_internal\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "E:\Workspace\camera-water\dist\水印助手\AppData\*"; DestDir: "{app}\AppData\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "E:\Workspace\camera-water\dist\水印助手\app\*"; DestDir: "{app}\app\"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "E:\Workspace\camera-water\dist\水印助手\resource\*"; DestDir: "{app}\resource\"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]
