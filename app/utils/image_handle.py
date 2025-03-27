@@ -2,12 +2,15 @@
 import subprocess
 import platform
 import shutil
+import os
 import re
 
 from app.utils.logger import setup_logger
 from app.config import EXIFTOOL_PATH
 from datetime import datetime
 from pathlib import Path
+from app.entity.custom_error import CustomError
+import zipfile
 from dateutil import parser
 from app.entity.enums import ExifId
 from PIL import Image, ImageOps, ImageDraw
@@ -22,7 +25,50 @@ def exiftool_command() -> Path:
     elif shutil.which('exiftool'):
         return Path(shutil.which('exiftool'))
     else:
-        return Path(f"{EXIFTOOL_PATH}/exiftool")
+        check_handle_exiftool()
+        return Path(f"{EXIFTOOL_PATH}/exiftool-mac/exiftool")
+
+
+def check_handle_exiftool():
+    """
+    检查并解压exiftool，修复文件权限问题
+    """
+    dir_path = Path(f"{EXIFTOOL_PATH}/exiftool-mac")
+    if os.path.isdir(dir_path):
+        return
+
+    zip_path = Path(f"{EXIFTOOL_PATH}/exiftool-mac.zip")
+    if not os.path.exists(zip_path):
+        logger.error(f"Error: 文件 {zip_path} 不存在")
+        raise CustomError("exifTool zip文件不存在", 503)
+
+    if not zipfile.is_zipfile(zip_path):
+        logger.error(f"Error: {zip_path} 不是有效的zip文件")
+        raise CustomError("exifTool zip不是有效文件", 502)
+
+    try:
+        # 解压文件
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(os.path.dirname(zip_path))
+            logger.info(f"成功解压 {zip_path} 到当前目录")
+
+        # macOS专用：修复权限和文件类型
+        if platform.system() == 'Darwin':
+            exiftool_path = dir_path / "exiftool"
+            # 移除可能存在的扩展属性
+            subprocess.run(['xattr', '-c', str(exiftool_path)], check=True)
+            # 添加可执行权限
+            subprocess.run(['chmod', '+x', str(exiftool_path)], check=True)
+            # 验证文件类型
+            subprocess.run(['file', str(exiftool_path)], check=True)
+
+        return True
+    except subprocess.CalledProcessError as e:
+        logger.error(f"修复权限失败: {e}")
+        raise CustomError("exifTool 权限修复失败", 504)
+    except Exception as e:
+        logger.exception(f"解压失败: {e}")
+        raise CustomError("exifTool 解压失败", 501)
 
 
 def get_exif(path) -> dict:
@@ -34,11 +80,18 @@ def get_exif(path) -> dict:
     exif_dict = {}
     try:
         command = [exiftool_command(), '-d', '%Y-%m-%d %H:%M:%S%3f%z', path]
+        subprocess_args = {
+            'stdout': subprocess.PIPE,
+            'stderr': subprocess.PIPE,
+            'universal_newlines': False  # Ensure bytes output for decode
+        }
+
+        if platform.system() == 'Windows':
+            subprocess_args['creationflags'] = subprocess.CREATE_NO_WINDOW
+
         process = subprocess.Popen(
             command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            creationflags=subprocess.CREATE_NO_WINDOW  # 防止创建控制台窗口
+            **subprocess_args
         )
         output_bytes, _ = process.communicate()
         output = output_bytes.decode('utf-8', errors='ignore')

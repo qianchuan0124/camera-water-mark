@@ -36,7 +36,7 @@ from app.entity.font_manager import font_manager
 from app.entity.enums import DISPLAY_TYPE, LOGO_LAYOUT, MARK_MODE
 
 DEFAULT_BG = {
-    "path": ASSETS_PATH / "default_bg.jpg",
+    "path": Path(f"{ASSETS_PATH}/default_bg.jpg"),
     "width": 1280,
     "height": 720,
 }
@@ -284,7 +284,7 @@ class SettingInterface(QWidget):
         self.useEquivalentFocal = SwitchSettingCard(
             FIF.PIN,
             self.tr("使用等效焦距"),
-            self.tr("是否使用等效焦距"),
+            self.tr("是否使用35mm等效焦距"),
             None,
             self.globalGroup
         )
@@ -604,7 +604,7 @@ class SettingInterface(QWidget):
             cfg.get(cfg.styleName))
 
         # 获取样式目录下的所有json文件名
-        style_files = [f.stem for f in STYLE_PATH.glob("*.json")]
+        style_files = [f.stem for f in Path(f"{STYLE_PATH}").glob("*.json")]
         if "default" in style_files:
             style_files.insert(0, style_files.pop(
                 style_files.index("default")))
@@ -737,7 +737,7 @@ class SettingInterface(QWidget):
     def updatePreview(self):
         # 创建预览线程
         self.renderButton.start_loading()
-        cache_preview = Path(CACHE_PATH) / "preview.png"
+        cache_preview = Path(f"{CACHE_PATH}/preview.png")
         if not os.path.exists(CACHE_PATH):
             os.makedirs(CACHE_PATH)
 
@@ -796,7 +796,7 @@ class SettingInterface(QWidget):
 
     def loadStyle(self, style_name):
         """加载指定样式"""
-        style_path = STYLE_PATH / f"{style_name}.json"
+        style_path = Path(f"{STYLE_PATH}/{style_name}.json")
 
         if not style_path.exists():
             return
@@ -892,7 +892,7 @@ class SettingInterface(QWidget):
                 return
 
             # 检查是否已存在同名样式
-            if (STYLE_PATH / f"{style_name}.json").exists():
+            if Path(f"{STYLE_PATH}/{style_name}.json").exists():
                 InfoBar.warning(
                     title=self.tr("警告"),
                     content=self.tr("样式 ") + style_name + self.tr(" 已存在"),
@@ -926,7 +926,7 @@ class SettingInterface(QWidget):
         """保存样式
         """
         # 确保样式目录存在
-        STYLE_PATH.mkdir(parents=True, exist_ok=True)
+        Path(STYLE_PATH).mkdir(parents=True, exist_ok=True)
 
         # 基础样式
         cfg.set(cfg.backgroundColor, self.baseBackgroundValue.name())
@@ -972,7 +972,7 @@ class SettingInterface(QWidget):
 
         # # 生成样式内容并保存
         config_dict = cfg.to_dict()
-        style_path = STYLE_PATH / f"{style_name}.json"
+        style_path = Path(f"{STYLE_PATH}/{style_name}.json")
 
         with open(style_path, 'w', encoding='utf-8') as f:
             json.dump(config_dict, f, indent=4)

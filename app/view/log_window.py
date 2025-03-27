@@ -1,6 +1,7 @@
 import os
 import platform
 import subprocess
+from pathlib import Path
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QTextCursor
@@ -20,7 +21,7 @@ class LogWindow(QWidget):
         FluentStyleSheet.FLUENT_WINDOW.apply(self)
 
         with open(
-            RESOURCE_PATH / "assets" / "qss" / "dark" / "demo.qss", encoding="utf-8"
+            Path(f"{RESOURCE_PATH}/assets/qss/dark/demo.qss"), encoding="utf-8"
         ) as f:
             self.setStyleSheet(f.read())
 
@@ -54,7 +55,7 @@ class LogWindow(QWidget):
         self.timer.start(500)  # 每2秒更新一次
 
         # 获取日志文件路径并打开文件
-        self.log_path = LOG_PATH / "app.log"
+        self.log_path = Path(f"{LOG_PATH}/app.log")
         try:
             self.log_file = open(self.log_path, "r", encoding="utf-8")
             self.load_last_lines(20480)
@@ -164,9 +165,9 @@ class LogWindow(QWidget):
             if system_platform == "Windows":
                 os.startfile(log_folder_path)
             elif system_platform == "Darwin":  # macOS
-                subprocess.run(["open", log_folder_path], creationflags=subprocess.CREATE_NO_WINDOW)
+                subprocess.run(["open", log_folder_path])
             elif system_platform == "Linux":
-                subprocess.run(["xdg-open", log_folder_path], creationflags=subprocess.CREATE_NO_WINDOW)
+                subprocess.run(["xdg-open", log_folder_path])
             else:
                 self.log_text.setPlainText(f"不支持的操作系统: {system_platform}")
         except Exception as e:

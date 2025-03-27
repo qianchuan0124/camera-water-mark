@@ -28,7 +28,7 @@ class MainWindow(FluentWindow):
         self.resize(1050, 800)
         self.setMinimumWidth(700)
         self.setWindowIcon(QIcon(str(LOGO_PATH)))
-        self.setWindowTitle("相机水印处理")
+        self.setWindowTitle("水印助手")
 
         # 设置窗口位置, 居中
         desktop = QApplication.desktop().availableGeometry()  # type: ignore

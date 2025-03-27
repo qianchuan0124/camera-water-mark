@@ -7,10 +7,9 @@ import shutil
 app_name = '水印助手'
 
 data_dirs = [
-  "AppData/bin",
   "AppData/cache",
   "AppData/logs",
-  "AppData/models",
+  "AppData/exiftool",
   "resource", 
   "app"
 ]
@@ -51,7 +50,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['logo.ico'],
+    icon=['logo.mac.ico'],
 )
 
 coll = COLLECT(
@@ -67,6 +66,8 @@ coll = COLLECT(
 app = BUNDLE(
   coll,
   name=f'{app_name}.app',
-  icon='logo.ico',
+  icon='logo.mac.ico',
   bundle_identifier=None,
 )
+
+subprocess.run(["open", "./dist"])
