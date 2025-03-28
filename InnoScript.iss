@@ -36,7 +36,7 @@ DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
 OutputDir=E:\Workspace\camera-water
-OutputBaseFilename=WaterMarkSetup
+OutputBaseFilename=watermark-win.setup
 SetupIconFile=E:\Workspace\camera-water\logo.ico
 SolidCompression=yes
 WizardStyle=modern

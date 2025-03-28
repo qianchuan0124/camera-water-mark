@@ -22,4 +22,5 @@ logs
 /dist/
 /app/resource/bin/
 *.exe
+*.zip
 token
