@@ -18,7 +18,7 @@ from app.utils.image_handle import (
     merge_images,
     resize_image_with_height
 )
-from app.entity.font_manager import font_manager
+from app.manager.font_manager import font_manager
 from app.utils.image_render import (
     add_shadow,
     add_rounded_corners,

@@ -2,6 +2,7 @@ import os
 import json
 import sys
 import subprocess
+import webbrowser
 from typing import List
 from pathlib import Path
 from PyQt5.QtCore import Qt, QStandardPaths
@@ -25,6 +26,7 @@ from qfluentwidgets import (
     BodyLabel,
     InfoBar,
     InfoBarPosition,
+    MessageBox
 )
 from app.thread.image_handle_thread import (
     ImageHandleThread,
@@ -38,6 +40,7 @@ from app.entity.picutre_item import PictureItem
 from app.components.common_item import TipButton, SearchInput, ListActionButton
 from app.view.log_window import LogWindow
 from app.utils.logger import setup_logger
+from app.manager.version_manager import version_manager
 from app.utils.image_handle import get_exif
 from app.components.custom_scroll_message_box import CustomScrollableMessageBox
 logger = setup_logger("home")
@@ -137,9 +140,23 @@ class HomeInterface(QWidget):
         """
         )
 
+        self.version_button = HyperlinkButton(
+            url="", text=self.tr("检查更新"), parent=self)
+        self.version_button.setStyleSheet(
+            self.version_button.styleSheet()
+            + """
+            QPushButton {
+                font-size: 12px;
+                color: #58f4ff;
+                text-decoration: underline;
+            }
+        """
+        )
+
         # 将组件添加到底部布局
         bottom_layout.addStretch()
         bottom_layout.addWidget(self.log_button)
+        bottom_layout.addWidget(self.version_button)
         bottom_layout.addStretch()
 
         self.main_layout.addStretch()
@@ -151,6 +168,7 @@ class HomeInterface(QWidget):
         self.clean_button.clicked.connect(self.on_clean_button_clicked)
         self.start_button.clicked.connect(self.on_start_button_clicked)
         self.log_button.clicked.connect(self.show_log_window)
+        self.version_button.clicked.connect(self.check_version)
         self.search_input.textChanged.connect(self.on_search_input_changed)
 
     def on_search_input_changed(self):
@@ -164,6 +182,20 @@ class HomeInterface(QWidget):
             self.log_window.show()
         else:
             self.log_window.activateWindow()
+
+    def check_version(self):
+        version_url = version_manager.new_version_url()
+        if version_url == None:
+            w = MessageBox(self.tr("检查更新"), self.tr("已是最新版本!"), self.window())
+            w.yesButton.setText(self.tr('确认'))
+            w.cancelButton.setText(self.tr('取消'))
+            w.exec()
+        else:
+            w = MessageBox(self.tr("检查更新"), self.tr("检测到最新版本!"), self.window())
+            w.yesButton.setText(self.tr('前往下载'))
+            w.cancelButton.setText(self.tr('取消'))
+            if w.exec():
+                webbrowser.open(version_url)
 
     def on_target_button_clicked(self):
         desktop_path = QStandardPaths.writableLocation(

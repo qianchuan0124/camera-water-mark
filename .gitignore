@@ -22,3 +22,4 @@ logs
 /dist/
 /app/resource/bin/
 *.exe
+token

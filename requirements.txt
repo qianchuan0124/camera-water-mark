@@ -1,5 +1,6 @@
-PyQt5
-PyQt-Fluent-Widgets
-Pillow
-python-dateutil
-pyyaml
+Pillow==11.1.0
+PyQt5==5.15.11
+PyQt5_sip==12.17.0
+PyQt_Fluent_Widgets==1.7.6
+python_dateutil==2.9.0.post0
+Requests==2.32.3

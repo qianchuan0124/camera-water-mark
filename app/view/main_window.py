@@ -25,7 +25,7 @@ class MainWindow(FluentWindow):
         self.initNavigation()
 
     def initWindow(self):
-        self.resize(1050, 800)
+        self.resize(1050, 600)
         self.setMinimumWidth(700)
         self.setWindowIcon(QIcon(str(LOGO_PATH)))
         self.setWindowTitle("水印助手")
@@ -39,12 +39,12 @@ class MainWindow(FluentWindow):
         self.show()
 
     def initNavigation(self):
-        self.addSubInterface(self.homeInterface, FIF.HOME, '水印处理')
+        self.addSubInterface(self.homeInterface, FIF.HOME, '主页')
 
         self.addSubInterface(
             self.settingInterface,
             FIF.SETTING,
-            self.tr("Settings"),
+            self.tr("设置"),
             NavigationItemPosition.BOTTOM,
         )
 

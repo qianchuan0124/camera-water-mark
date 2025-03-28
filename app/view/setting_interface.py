@@ -32,7 +32,7 @@ from app.components.common_card import (
 from app.config import ASSETS_PATH, CACHE_PATH
 from app.thread.image_handle_thread import ImageHandleTask, ImageHandleThread, HandleProgress, ImageHandleStatus
 from app.components.common_item import LoadingButton
-from app.entity.font_manager import font_manager
+from app.manager.font_manager import font_manager
 from app.entity.enums import DISPLAY_TYPE, LOGO_LAYOUT, MARK_MODE
 
 DEFAULT_BG = {

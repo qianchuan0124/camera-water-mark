@@ -1,3 +1,7 @@
+CHECK_VERSION_URL = "https://api.github.com/repos/qianchuan0124/camera-water-mark/releases/latest"
+CURRENT_VERSION = "v0.0.1"
+
+
 MODEL_NAME = '相机型号(eg. Nikon Z7)'
 MODEL_VALUE = 'Model'
 MAKE_NAME = '相机厂商(eg. Nikon)'
