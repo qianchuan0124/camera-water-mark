@@ -9,6 +9,12 @@ from PyQt5.QtCore import QLocale
 from app.utils.logger import setup_logger
 logger = setup_logger("main")
 
+print(""""
+本工具为开源工具，遵循 Apache 2.0 License 发布。如果您在使用过程中遇到问题，请联系作者：
+      GitHub: @qianchuan0124
+      邮箱: qianchuan0124@gmail.com
+""")
+
 
 def exception_hook(exctype, value, tb):
     logger.exception("".join(traceback.format_exception(exctype, value, tb)))
