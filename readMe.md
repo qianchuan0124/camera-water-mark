@@ -2,6 +2,7 @@
   <img src="./doc/images/logo.svg"alt="WaterMark Logo" width="100">
   <h1>水印助手</h1>
   <p>一款用于给照片添加水印的助手，提取照片元数据，支持即时预览，批量添加水印。</p>
+</div>
 
 ## 基本功能
 
@@ -13,15 +14,15 @@
 
 ## 界面预览
 
-<img src="E:\Workspace\camera-water\doc\images\image-20250329142744954.png" alt="image-20250329142744954" style="zoom:80%;" />
+<img src="./doc/images/image-20250329142744954.png" alt="image-20250329142744954" style="zoom:80%;" />
 
-<img src="E:\Workspace\camera-water\doc\images\image-20250329142847079.png" alt="image-20250329142847079" style="zoom:80%;" />
+<img src="./doc/images/image-20250329142847079.png" alt="image-20250329142847079" style="zoom:80%;" />
 
-<img src="E:\Workspace\camera-water\doc\images\image-20250329142958426.png" alt="image-20250329142958426" style="zoom:80%;" />
+<img src="./doc/images/image-20250329142958426.png" alt="image-20250329142958426" style="zoom:80%;" />
 
-<img src="E:\Workspace\camera-water\doc\images\image-20250329143104557.png" alt="image-20250329143104557" style="zoom:80%;" />
+<img src="./doc/images/image-20250329143104557.png" alt="image-20250329143104557" style="zoom:80%;" />
 
-<img src="E:\Workspace\camera-water\doc\images\image-20250329143208299.png" alt="image-20250329143208299" style="zoom:80%;" />
+<img src="./doc/images/image-20250329143208299.png" alt="image-20250329143208299" style="zoom:80%;" />
 
 ## 快速开始
 
