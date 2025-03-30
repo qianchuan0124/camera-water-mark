@@ -24,3 +24,4 @@ logs
 *.exe
 *.zip
 token
+token_inner

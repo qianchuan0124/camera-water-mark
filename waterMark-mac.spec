@@ -18,6 +18,7 @@ datas = [
   ("resource", "resource"),
   ("app", "app"),
   ("token", ".")
+  ("token_inner", "."),
 ]
 
 a = Analysis(

@@ -1,7 +1,7 @@
 from pathlib import Path
 from PyQt5.QtCore import Qt, QSize
 from app.config import ASSETS_PATH
-from PyQt5.QtGui import QMovie, QIcon
+from PyQt5.QtGui import QMovie, QIcon, QPainter, QColor, QPainterPath, QPen
 from qfluentwidgets import (
     ToolTipFilter,
     PrimaryToolButton,
@@ -16,6 +16,55 @@ from qfluentwidgets import (
 from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QLabel
 
 LOADING_GIF = f"{ASSETS_PATH}/loading.gif"
+
+class TagLabel(QLabel):
+    def __init__(self, text: str, parent=None):
+        super().__init__(text, parent)
+        
+        # 设置固定高度
+        self.setFixedHeight(20)  # 设置标签固定高度
+        
+        # 设置样式
+        self.setStyleSheet("""
+            QLabel {
+                color: #43CF7C;
+                padding: 0px 8px;
+                border: 1px solid #43CF7C;
+                border-radius: 8px;
+                font-size: 12px;
+                background: transparent;
+            }
+        """)
+        
+        # 设置对齐方式
+        self.setAlignment(Qt.AlignCenter)
+        
+        # 设置文本边距
+        self.setContentsMargins(0, 0, 0, 0)
+        
+        # 自动调整大小
+        self.adjustSize()
+
+    def paintEvent(self, event):
+        """重写绘制事件，实现圆角边框效果"""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)  # 抗锯齿
+        
+        # 创建圆角矩形路径
+        path = QPainterPath()
+        path.addRoundedRect(1, 1, self.width()-2, self.height()-2, 8, 8)
+        
+        # 设置画笔（边框）
+        pen = QPen(QColor("#43CF7C"))
+        pen.setWidth(1)
+        painter.setPen(pen)
+        
+        # 绘制边框
+        painter.drawPath(path)
+        
+        # 调用父类的绘制事件来绘制文本
+        super().paintEvent(event)
+
 
 
 class LoadingButton(QPushButton):

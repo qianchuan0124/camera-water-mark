@@ -35,9 +35,10 @@ from app.thread.image_handle_thread import (
     HandleProgress
 )
 from app.config import cfg, ASSETS_PATH
+from app.entity.constants import IS_INNER
 from app.entity.enums import SupportedImageFormats
 from app.entity.picutre_item import PictureItem
-from app.components.common_item import TipButton, SearchInput, ListActionButton
+from app.components.common_item import TipButton, SearchInput, ListActionButton, TagLabel
 from app.view.log_window import LogWindow
 from app.utils.logger import setup_logger
 from app.manager.version_manager import version_manager
@@ -153,10 +154,14 @@ class HomeInterface(QWidget):
         """
         )
 
+        self.innerTag = TagLabel("内部版", self)
+        self.innerTag.setHidden(not IS_INNER)
+
         # 将组件添加到底部布局
         bottom_layout.addStretch()
         bottom_layout.addWidget(self.log_button)
         bottom_layout.addWidget(self.version_button)
+        bottom_layout.addWidget(self.innerTag)
         bottom_layout.addStretch()
 
         self.main_layout.addStretch()

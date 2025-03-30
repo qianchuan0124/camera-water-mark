@@ -1,5 +1,9 @@
-CHECK_VERSION_URL = "https://api.github.com/repos/qianchuan0124/camera-water-mark/releases/latest"
-CURRENT_VERSION = "v0.0.1"
+IS_INNER = False
+if IS_INNER:
+    CHECK_VERSION_URL = "https://gitee.com/api/v5/repos/qian_chuan/camera-water-mark/releases/latest"
+else:
+    CHECK_VERSION_URL = "https://api.github.com/repos/qianchuan0124/camera-water-mark/releases/latest"
+CURRENT_VERSION = "v0.0.2"
 
 
 MODEL_NAME = '相机型号(eg. Nikon Z7)'

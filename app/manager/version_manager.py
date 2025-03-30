@@ -3,7 +3,7 @@ import requests
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional, List
-from app.entity.constants import CHECK_VERSION_URL, CURRENT_VERSION
+from app.entity.constants import CHECK_VERSION_URL, CURRENT_VERSION, IS_INNER
 from packaging import version
 from app.config import ROOT_PATH
 
@@ -62,22 +62,40 @@ class VersionManager:
             data = response.json()
 
             # 解析assets
-            assets = [
-                GitHubAsset(
-                    name=asset["name"],
-                    download_url=asset["browser_download_url"],
-                    size=asset["size"],
-                    download_count=asset["download_count"]
-                ) for asset in data.get("assets", [])
-            ]
+            if IS_INNER:
+                assets = [
+                    GitHubAsset(
+                        name=asset["name"],
+                        download_url=asset["browser_download_url"],
+                        size=0,
+                        download_count=0
+                    ) for asset in data.get("assets", [])
+                ]
 
-            return GitHubRelease(
-                tag_name=data["tag_name"],
-                name=data["name"],
-                published_at=data["published_at"],
-                assets=assets,
-                body=data.get("body")
-            )
+                return GitHubRelease(
+                    tag_name=data["tag_name"],
+                    name=data["name"],
+                    published_at="",
+                    assets=assets,
+                    body=data.get("body")
+                )
+            else:
+                assets = [
+                    GitHubAsset(
+                        name=asset["name"],
+                        download_url=asset["browser_download_url"],
+                        size=asset["size"],
+                        download_count=asset["download_count"]
+                    ) for asset in data.get("assets", [])
+                ]
+
+                return GitHubRelease(
+                    tag_name=data["tag_name"],
+                    name=data["name"],
+                    published_at=data["published_at"],
+                    assets=assets,
+                    body=data.get("body")
+                )
 
         except (requests.exceptions.RequestException, KeyError) as e:
             logger.exception(f"获取发布信息失败: error:{str(e)}")
@@ -88,9 +106,15 @@ class VersionManager:
 
     def read_token(self) -> Optional[str]:
         if getattr(sys, 'frozen', False):
-            path = Path(f"{ROOT_PATH}/token")
+            if IS_INNER:
+                path = Path(f"{ROOT_PATH}/token_inner")
+            else:
+                path = Path(f"{ROOT_PATH}/token")
         else:
-            path = Path("token")
+            if IS_INNER:
+                path = Path("token_inner")
+            else:
+                path = Path("token")
         if not path.exists():
             raise FileNotFoundError(f"Token文件不存在")
 

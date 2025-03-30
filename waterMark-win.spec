@@ -18,6 +18,7 @@ datas = [
   ("resource", "resource"),
   ("app", "app"),
   ("token", "."),
+  ("token_inner", "."),
 ]
 app_name = '水印助手'
 
