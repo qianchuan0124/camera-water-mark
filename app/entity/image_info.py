@@ -1,5 +1,6 @@
 import os
 import re
+from typing import List
 from app.utils.logger import setup_logger
 from app.entity.enums import ExifId, DISPLAY_TYPE
 from datetime import datetime
@@ -37,7 +38,7 @@ class ImageInfo(object):
 
     # 镜头型号
     def lens_model(self) -> str:
-        return extract_attribute(self.exif, *ExifId.LENS_MODEL.value)
+        return extract_attribute(self.exif, *ExifId.lens_models())
 
     # 镜头厂商
     def lens_make(self) -> str:
@@ -120,17 +121,40 @@ class ImageInfo(object):
         iso: str = extract_attribute(
             self.exif, ExifId.ISO.value, default_value=DEFAULT_VALUE)
         return '  '.join([str(focal_length) + 'mm', 'f/' + f_number, exposure_time,
-                          'ISO' + str(iso)])
+                          'ISO ' + str(iso)])
 
     def get_location_str(self) -> str:
-        # GPS 信息
+        """
+        获取完整的位置信息字符串（包括经纬度和高度）
+        Returns:
+            str: 格式化的位置信息
+        """
+        location_parts: List[str] = []
+
+        # 获取经纬度信息
         if 'GPSPosition' in self.exif:
-            return str.join(' ', self.extract_gps_info(self.exif.get('GPSPosition')))
+            gps_info = self.extract_gps_info(self.exif.get('GPSPosition'))
+            if gps_info:
+                location_parts.append(gps_info)
         elif 'GPSLatitude' in self.exif and 'GPSLongitude' in self.exif:
-            return str.join(' ', self.extract_gps_lat_and_long((self.exif.get('GPSLatitude'),
-                                                                self.exif.get('GPSLongitude'))))
-        else:
-            return '无'
+            latitude, longitude = self.extract_gps_lat_and_long((
+                self.exif.get('GPSLatitude'),
+                self.exif.get('GPSLongitude')
+            ))
+            if latitude and longitude:
+                location_parts.append(latitude)
+                location_parts.append(longitude)
+
+        # 获取高度信息
+        if 'GPSAltitude' in self.exif:
+            altitude = self.extract_altitude(self.exif.get('GPSAltitude'))
+            if altitude:
+                location_parts.append(altitude)
+
+        # 确保所有元素都是字符串
+        location_parts = [str(part) for part in location_parts if part]
+        
+        return ' '.join(location_parts) if location_parts else '无'
 
     def extract_gps_lat_and_long(self, lat: str, long: str) -> str:
         # 提取出纬度和经度主要部分
@@ -145,7 +169,48 @@ class ImageInfo(object):
         longitude = f"{long_deg}°{long_min}'{long_dir}"
 
         return latitude, longitude
+    
+    def extract_altitude(self, level_str: str) -> str:
+        """
+        格式化海平面高度字符串
+        
+        Args:
+            level_str: 海平面高度字符串
+            
+        Returns:
+            str: 格式化后的字符串 (+/-数字m)
+        """
+        if not level_str:
+            return ""
+        
+        try:
+            # 转换为小写并移除多余空格
+            level_str = level_str.lower().strip()
+            
+            # 使用正则表达式提取数字
+            numbers = re.findall(r'\d+', level_str)
+            if not numbers:
+                return ""
+            
+            number = numbers[0]
+            
+            # 判断高度方向
+            if 'above' in level_str:
+                return f"  +{number} m"
+            elif 'below' in level_str:
+                return f"  -{number} m"
+            elif 'sea level' in level_str:
+                return f"  {number} m"
+            else:
+                # 如果没有明确指示，假设为正值
+                return f" +{number}m"
+                
+        except Exception as e:
+            logger.exception(f"Error processing sea level string: {e}")
+            return "" 
+
 
     def extract_gps_info(self, gps_info: str) -> str:
         lat, long = gps_info.split(", ")
-        return self.extract_gps_lat_and_long(lat, long)
+        latitude, longitude = self.extract_gps_lat_and_long(lat, long)
+        return f"{latitude}, {longitude}"

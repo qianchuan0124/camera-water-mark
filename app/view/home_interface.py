@@ -44,6 +44,7 @@ from app.utils.logger import setup_logger
 from app.manager.version_manager import version_manager
 from app.utils.image_handle import get_exif
 from app.components.custom_scroll_message_box import CustomScrollableMessageBox
+from app.components.exif_edit_message_box import ExifEditMessageBox
 logger = setup_logger("home")
 
 # 打开文件夹，选中多张图片，形成表格
@@ -290,6 +291,7 @@ class HomeInterface(QWidget):
         self.add_button.setEnabled(self.isEnable)
         self.search_input.setEnabled(self.isEnable)
         self.target_button.setEnabled(self.isEnable)
+        self._populate_model_table()
 
     def _create_picture_table(self):
         """创建图片表格"""
@@ -312,7 +314,7 @@ class HomeInterface(QWidget):
         header.setSectionResizeMode(1, QHeaderView.Fixed)
         header.setSectionResizeMode(2, QHeaderView.Fixed)
 
-        table.setColumnWidth(1, 240)
+        table.setColumnWidth(1, 300)
         table.setColumnWidth(2, 120)
 
         # 设置行高
@@ -362,10 +364,16 @@ class HomeInterface(QWidget):
         info_btn.clicked.connect(
             lambda checked, r=row: self._info_model(r))
 
+        eidt_btn = ListActionButton(self, tips=self.tr("编辑元信息"))
+        eidt_btn.setIcon(FIF.EDIT)
+        eidt_btn.clicked.connect(
+            lambda checked, r=row: self._edit_info_model(r))
+
         action_layout.addStretch()
         action_layout.addWidget(original_path_btn)
         action_layout.addWidget(delete_btn)
         action_layout.addWidget(info_btn)
+        action_layout.addWidget(eidt_btn)
         action_layout.addStretch()
         self.picture_table.setCellWidget(row, 1, action_container)
 
@@ -411,6 +419,18 @@ class HomeInterface(QWidget):
                 duration=1500,
                 parent=self,
             )
+
+    def _edit_info_model(self, row):
+        item: PictureItem = self.picture_models[row]
+        w = ExifEditMessageBox(self.window(), item.original_path, row)
+        w.path_changed.connect(self._on_path_changed)
+        if w.exec():
+            pass
+    
+    def _on_path_changed(self, row: int, path: Path):
+        self.picture_models[row].original_path = path
+        self.picture_models[row].name = os.path.basename(path)
+        self._populate_model_table()
 
     def dragEnterEvent(self, event):
         event.accept() if event.mimeData().hasUrls() else event.ignore()
