@@ -121,6 +121,45 @@ def get_exif(path) -> dict:
 
     return exif_dict
 
+def update_custom_tags(image_path: str, tags: dict) -> bool:
+        """
+        更新自定义的 EXIF 标签
+        Args:
+            image_path: 图片路径
+            tags: 标签字典，键为标签名，值为标签值
+        Returns:
+            bool: 是否更新成功
+        """
+        try:
+            command = [exiftool_command(), "-overwrite_original"]
+            
+            # 添加所有标签到命令中
+            for tag, value in tags.items():
+                command.append(f"-{tag}={value}")
+            
+            command.append(image_path)
+            
+            if os.name == 'nt':
+                process = subprocess.Popen(
+                    command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+            else:
+                process = subprocess.Popen(
+                    command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+            
+            stdout, stderr = process.communicate()
+            
+            return process.returncode == 0
+            
+        except Exception as e:
+            print(f"Error updating custom tags: {str(e)}")
+            raise CustomError("更新失败", 601)
 
 def extract_attribute(data_dict: dict, *keys, default_value: str = '', prefix='', suffix='') -> str:
     """
