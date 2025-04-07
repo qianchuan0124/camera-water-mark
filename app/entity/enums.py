@@ -85,6 +85,10 @@ class ExifId(Enum):
     def lens_models() -> Tuple[str, str, str]:
         """返回镜头标签元组，以匹配 *value 的行为"""
         return ('LensModel', 'Lens', 'LensID')
+    
+    @staticmethod
+    def update_model_info() -> str:
+        return "Model"
 
     # 描述映射（类方法实现）
     @classmethod
@@ -119,12 +123,18 @@ class ExifId(Enum):
         """获取除需要展示的所有枚举值"""
         return [member for member in cls if member != cls.ORIENTATION and member != cls.FOCAL_LENGTH_IN_35MM_FILM and member != cls.SHUTTER_SPEED_VALUE]
 
+    def update_value(self) -> str:
+        if self == ExifId.CAMERA_MODEL:
+            return ExifId.update_model_info()
+        else:
+            return self.value
+
     def default_value(self) -> str:
         """获取当前枚举值的描述"""
         if self == ExifId.CAMERA_MODEL:
             return "例如: Nikon 30"
         elif self == ExifId.CAMERA_MAKE:
-            return "例如: Nikon"
+            return self.make_tips()
         elif self == ExifId.LENS_MODEL:
             return "例如: Nikkor 24-70 f/2.8"
         elif self == ExifId.LENS_MAKE:
@@ -141,6 +151,25 @@ class ExifId(Enum):
             return "例如: 1/1000s"
         else:
             return "--"
+
+    def make_tips(self):
+        return """
+        目前支持的厂商:
+        苹果: apple
+        佳能: canon
+        尼康: nikon
+        富士: fujifilm
+        索尼: sony
+        徕卡: leica
+        奥林巴斯: olympus
+        宾得: pentax
+        大疆: DJI
+        哈苏: hasselblad
+        理光: ricoh
+        松下: panasonic
+
+        注意大小写,不支持的厂商将使用默认的logo图标。
+        """
 
 
 # 水印展示类型

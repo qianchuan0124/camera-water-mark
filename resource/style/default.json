@@ -2,7 +2,7 @@
     "Global": {
         "AddShadow": true,
         "BackgroundBlur": false,
-        "UseEquivalentFocal": true,
+        "UseEquivalentFocal": false,
         "UseOriginRatioPadding": false,
         "WhiteMargin": true,
         "WhiteMarginWidth": 3
@@ -18,6 +18,8 @@
         "TargetPath": ""
     },
     "LOGO": {
+        "CustomLogoEnable": false,
+        "CustomLogoPath": "",
         "isLogoLeft": true,
         "LogoEnable": true
     },

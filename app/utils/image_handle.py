@@ -153,13 +153,29 @@ def update_custom_tags(image_path: str, tags: dict) -> bool:
                     stderr=subprocess.PIPE
                 )
             
+            # 获取输出和错误信息
             stdout, stderr = process.communicate()
             
+            # 打印命令输出
+            if stdout:
+                logger.info(f"ExifTool output: {stdout}")
+            
+            # 打印错误信息
+            if stderr:
+                logger.error(f"ExifTool error: {stderr}")
+            
+            # 打印返回码
+            logger.info(f"ExifTool return code: {process.returncode}")
+            
+            if process.returncode != 0:
+                raise CustomError(f"ExifTool failed: {stderr}", 601)
+                
             return process.returncode == 0
             
         except Exception as e:
-            print(f"Error updating custom tags: {str(e)}")
-            raise CustomError("更新失败", 601)
+            error_msg = f"Error updating custom tags: {str(e)}"
+            logger.error(error_msg)
+            raise CustomError(error_msg, 601)
 
 def extract_attribute(data_dict: dict, *keys, default_value: str = '', prefix='', suffix='') -> str:
     """

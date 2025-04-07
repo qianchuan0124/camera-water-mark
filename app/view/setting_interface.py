@@ -32,6 +32,7 @@ from app.components.common_card import (
 from app.config import ASSETS_PATH, CACHE_PATH
 from app.thread.image_handle_thread import ImageHandleTask, ImageHandleThread, HandleProgress, ImageHandleStatus
 from app.components.common_item import LoadingButton
+from app.components.custom_logo_path_card import CustomLogoPathCard
 from app.manager.font_manager import font_manager
 from app.entity.enums import DISPLAY_TYPE, LOGO_LAYOUT, MARK_MODE
 
@@ -96,6 +97,8 @@ class SettingInterface(QWidget):
         # LOGO样式
         self.logoEnableValue = cfg.logoEnable.value
         self.logoLayoutValue = LOGO_LAYOUT.LEFT if cfg.isLogoLeft else LOGO_LAYOUT.RIGHT
+        self.customLogoEnableValue = cfg.customLogoEnable.value
+        self.customLogoPathValue = cfg.customLogoPath.value
 
         # 布局样式
         self.leftTopTypeValue = DISPLAY_TYPE.from_str(cfg.leftTopType.value)
@@ -284,7 +287,7 @@ class SettingInterface(QWidget):
         self.useEquivalentFocal = SwitchSettingCard(
             FIF.PIN,
             self.tr("使用等效焦距"),
-            self.tr("是否使用35mm等效焦距"),
+            self.tr("是否使用等效焦距"),
             None,
             self.globalGroup
         )
@@ -348,6 +351,8 @@ class SettingInterface(QWidget):
             self.tr("设置LOGO布局样式"),
             texts=LOGO_LAYOUT.all_values(),
         )
+
+        self.customLogo = CustomLogoPathCard(self.logoGroup)
 
         # 布局样式
 
@@ -470,6 +475,7 @@ class SettingInterface(QWidget):
         # LOGO样式
         self.logoGroup.addSettingCard(self.logoEnable)
         self.logoGroup.addSettingCard(self.logoLayout)
+        self.logoGroup.addSettingCard(self.customLogo)
 
         # 全局样式
         self.globalGroup.addSettingCard(self.useEquivalentFocal)
@@ -546,6 +552,8 @@ class SettingInterface(QWidget):
         # LOGO样式
         self.logoEnable.setValue(self.logoEnableValue)
         self.logoLayout.comboBox.setCurrentText(self.logoLayoutValue.value)
+        self.customLogo.setChecked(self.customLogoEnableValue)
+        self.customLogo.setPath(self.customLogoPathValue)
 
         # 布局样式
         self.leftTopType.comboBox.setCurrentText(
@@ -573,6 +581,8 @@ class SettingInterface(QWidget):
     def __setInitHiddens(self):
         self.logoEnable.setHidden(self.modeValue.isSimple())
         self.logoLayout.setHidden(
+            True if self.modeValue.isSimple() else not self.logoEnable)
+        self.customLogo.setHidden(
             True if self.modeValue.isSimple() else not self.logoEnable)
 
         self.logoGroup.setHidden(self.modeValue.isSimple())
@@ -664,6 +674,10 @@ class SettingInterface(QWidget):
         self.logoEnable.checkedChanged.connect(self.onLogoEnableChanged)
         self.logoLayout.currentTextChanged.connect(lambda text: setattr(
             self, "logoLayoutValue", LOGO_LAYOUT.get_enum(text)))
+        self.customLogo.checkedChanged.connect(lambda text: setattr(
+            self, "customLogoEnableValue", text))
+        self.customLogo.pathChanged.connect(
+            lambda text: setattr(self, "customLogoPathValue", text))
 
         # 布局样式
 
@@ -712,6 +726,7 @@ class SettingInterface(QWidget):
     def onLogoEnableChanged(self, logoEnable):
         self.logoEnableValue = logoEnable
         self.logoLayout.setHidden(not self.logoEnableValue)
+        self.customLogo.setHidden(not self.logoEnableValue)
 
     def on_save_button_tapped(self):
         self.saveStyle(cfg.styleName.value)
@@ -835,6 +850,8 @@ class SettingInterface(QWidget):
         self.logoEnableValue = style_content["LOGO"]["LogoEnable"]
         self.logoLayoutValue = LOGO_LAYOUT.LEFT if style_content[
             "LOGO"]["isLogoLeft"] else LOGO_LAYOUT.RIGHT
+        self.customLogoEnableValue = style_content["LOGO"]["CustomLogoEnable"]
+        self.customLogoPathValue = style_content["LOGO"]["CustomLogoPath"]
 
         # 布局样式
         self.leftTopTypeValue = DISPLAY_TYPE.from_str(
@@ -951,6 +968,8 @@ class SettingInterface(QWidget):
         # LOGO布局
         cfg.set(cfg.logoEnable, self.logoEnableValue)
         cfg.set(cfg.isLogoLeft, self.logoLayoutValue.isLeft())
+        cfg.set(cfg.customLogoEnable, self.customLogoEnableValue)
+        cfg.set(cfg.customLogoPath, self.customLogoPathValue)
 
         # 布局样式
         cfg.set(cfg.leftTopType, self.leftTopTypeValue.value)

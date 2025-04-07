@@ -1,5 +1,5 @@
-from qfluentwidgets import MessageBoxBase, TableWidget, setTheme, Theme, InfoBar
-from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QApplication, QFileDialog
+from qfluentwidgets import MessageBoxBase, TableWidget, setTheme, Theme, InfoBar, TransparentToolButton, FluentIcon, MessageBox
+from PyQt5.QtWidgets import QTableWidgetItem, QHeaderView, QApplication, QFileDialog, QHBoxLayout, QWidget
 from PyQt5.QtCore import Qt, pyqtSignal
 from pathlib import Path
 from app.utils.image_handle import get_exif, update_custom_tags
@@ -9,6 +9,7 @@ import os
 import shutil
 from dataclasses import dataclass
 from app.entity.custom_error import CustomError
+
 
 @dataclass
 class ExifItem:
@@ -20,6 +21,7 @@ class ExifItem:
 
 class ExifEditMessageBox(MessageBoxBase):
     path_changed = pyqtSignal((int, Path))
+
     def __init__(self, parent=None, path: Path = None, index: int = None):
         setTheme(Theme.DARK)
         super().__init__(parent)
@@ -41,16 +43,21 @@ class ExifEditMessageBox(MessageBoxBase):
     def _init_ui(self):
         """初始化界面组件"""
         self.table = TableWidget(self)
-        self.table.setColumnCount(2)
-        self.table.setHorizontalHeaderLabels(["属性", "值"])
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(
+            [self.tr("属性"), self.tr("值"), self.tr("备注")])
 
         # 表格样式设置
         self.table.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeToContents)
+            0, QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
         self.table.verticalHeader().hide()
         self.table.setEditTriggers(
             TableWidget.DoubleClicked | TableWidget.EditKeyPressed)
+
+        self.table.setColumnWidth(0, 100)
+        self.table.setColumnWidth(2, 60)
 
         # 添加数据
         self._init_table_data()
@@ -68,7 +75,7 @@ class ExifEditMessageBox(MessageBoxBase):
                 info: str = self.exif[exif.value]
             else:
                 info: str = ""
-            item = ExifItem(exif.value, exif.ex_description(),
+            item = ExifItem(exif.update_value(), exif.ex_description(),
                             info, exif.default_value())
             self.exif_data.append(item)
 
@@ -77,6 +84,7 @@ class ExifEditMessageBox(MessageBoxBase):
             # 左侧标签列
             label_item = QTableWidgetItem(data.desc)
             label_item.setFlags(label_item.flags() & ~Qt.ItemIsEditable)
+            label_item.setToolTip(data.desc)
             self.table.setItem(row, 0, label_item)
 
             # 右侧值列（带 placeholder 效果）
@@ -84,11 +92,31 @@ class ExifEditMessageBox(MessageBoxBase):
             if not data.value.strip():  # 如果值为空，设置 placeholder
                 value_item.setData(Qt.DisplayRole, "")
                 value_item.setData(Qt.UserRole, data.value)  # 保存原始值
-                value_item.setToolTip(data.tip)
             self.table.setItem(row, 1, value_item)
+
+            reamrk_item_container = QWidget()
+            reamrk_layout = QHBoxLayout(reamrk_item_container)
+            reamrk_layout.setContentsMargins(0, 0, 0, 0)
+
+            remark_button = TransparentToolButton(FluentIcon.INFO)
+            remark_button.clicked.connect(
+                lambda checked, r=row: self._remark_model(r))
+            reamrk_layout.addStretch()
+            reamrk_layout.addWidget(remark_button)
+            reamrk_layout.addStretch()
+            self.table.setCellWidget(row, 2, reamrk_item_container)
 
         # 连接信号，当编辑时恢复默认样式
         self.table.cellChanged.connect(self._on_cell_changed)
+
+    def _remark_model(self, row):
+        """显示备注信息"""
+        item = self.exif_data[row]
+        if item:
+            w = MessageBox(self.tr("提示信息"), item.tip, self.window())
+            w.cancelButton.hide()
+            w.yesButton.setText(self.tr("我知道了"))
+            w.exec()
 
     def _on_cell_changed(self, row, col):
         """当单元格内容变化时处理 placeholder 样式"""
@@ -112,9 +140,9 @@ class ExifEditMessageBox(MessageBoxBase):
         )
 
         if new_path:
-            # 复制原文件到新位置
-            shutil.copy2(self.path, new_path)
             if self.path != new_path:
+                # 复制原文件到新位置
+                shutil.copy2(self.path, new_path)
                 self.path = new_path
                 self.path_changed.emit(self.index, Path(new_path))
             # 保存EXIF到新文件
