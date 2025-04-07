@@ -783,10 +783,11 @@ class SettingInterface(QWidget):
                 parent=self,
             )
         else:
+            info = task.errorInfo if len(task.errorInfo) > 0 else self.tr("位置错误")
             self.renderButton.stop_loading()
             InfoBar.error(
-                self.tr("处理错误"),
-                self.tr("图片渲染错误"),
+                self.tr("渲染错误"),
+                info,
                 duration=3000,
                 parent=self,
             )
