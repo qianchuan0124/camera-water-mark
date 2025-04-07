@@ -1,3 +1,4 @@
+import os
 from enum import Enum
 from typing import List
 from pathlib import Path
@@ -102,6 +103,14 @@ class ImageHandleThread(QThread):
         :param make: 厂商
         :return: logo
         """
+        if cfg.customLogoEnable.value:
+            if self._logos.get("custom") is None:
+                if not os.path.exists(cfg.customLogoPath.value):
+                    raise CustomError("自定义Logo不存在")
+                custom_logo_path = Path(cfg.customLogoPath.value)
+                self._logos["custom"] = Image.open(custom_logo_path)
+            return self._logos["custom"]
+
         # 已经读到内存中的 logo
         if make in self._logos:
             return self._logos[make]

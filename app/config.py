@@ -48,7 +48,6 @@ else:
     FONT_PATH = RESOURCE_PATH / "fonts"
 
 
-
 LOGO_PATH = {
     "default": Path(f"{RESOURCE_PATH}/logos/empty.png"),
     "APPLE": Path(f"{RESOURCE_PATH}/logos/apple.png"),
@@ -94,6 +93,8 @@ class Config(QConfig):
 
     logoEnable = ConfigItem("LOGO", "LogoEnable", True)
     isLogoLeft = ConfigItem("LOGO", "isLogoLeft", True)
+    customLogoEnable = ConfigItem("LOGO", "CustomLogoEnable", False)
+    customLogoPath = ConfigItem("LOGO", "CustomLogoPath", "")
 
     leftTopType = ConfigItem("Layout", "LeftTopType", "LensModel")
     leftTopBold = ConfigItem("Layout", "LeftTopBold", True)

@@ -121,6 +121,61 @@ def get_exif(path) -> dict:
 
     return exif_dict
 
+def update_custom_tags(image_path: str, tags: dict) -> bool:
+        """
+        更新自定义的 EXIF 标签
+        Args:
+            image_path: 图片路径
+            tags: 标签字典，键为标签名，值为标签值
+        Returns:
+            bool: 是否更新成功
+        """
+        try:
+            command = [exiftool_command(), "-overwrite_original"]
+            
+            # 添加所有标签到命令中
+            for tag, value in tags.items():
+                command.append(f"-{tag}={value}")
+            
+            command.append(image_path)
+            
+            if os.name == 'nt':
+                process = subprocess.Popen(
+                    command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+            else:
+                process = subprocess.Popen(
+                    command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+            
+            # 获取输出和错误信息
+            stdout, stderr = process.communicate()
+            
+            # 打印命令输出
+            if stdout:
+                logger.info(f"ExifTool output: {stdout}")
+            
+            # 打印错误信息
+            if stderr:
+                logger.error(f"ExifTool error: {stderr}")
+            
+            # 打印返回码
+            logger.info(f"ExifTool return code: {process.returncode}")
+            
+            if process.returncode != 0:
+                raise CustomError(f"ExifTool failed: {stderr}", 601)
+                
+            return process.returncode == 0
+            
+        except Exception as e:
+            error_msg = f"Error updating custom tags: {str(e)}"
+            logger.error(error_msg)
+            raise CustomError(error_msg, 601)
 
 def extract_attribute(data_dict: dict, *keys, default_value: str = '', prefix='', suffix='') -> str:
     """
