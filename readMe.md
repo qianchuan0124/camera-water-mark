@@ -4,6 +4,7 @@
   <p>一款用于给照片添加水印的助手，提取照片元数据，支持即时预览，批量添加水印。</p>
 </div>
 
+
 ## 📜 基本功能
 
 1. 批量添加水印，查看每一张照片的元数据内容。
@@ -28,11 +29,11 @@
 
 ### Windows
 
-开箱即用，点击[下载链接](https://github.com/qianchuan0124/camera-water-mark/releases/download/v0.0.1/watermark-win.setup.exe)将安装文件下载到本地，双击setup.exe文件，按照指示进行安装，成功安装后点击桌面快捷方式图标即可使用。
+开箱即用，点击[下载链接](https://github.com/qianchuan0124/camera-water-mark/releases/download/v0.0.3/watermark-win.setup.exe)将安装文件下载到本地，双击setup.exe文件，按照指示进行安装，成功安装后点击桌面快捷方式图标即可使用。
 
 ### MacOS
 
-开箱即用，点击[下载链接](https://github.com/qianchuan0124/camera-water-mark/releases/download/v0.0.1/watermark-mac.zip)将压缩包下载到本地，解压到当前目录，双击“水印助手”即可打开APP进行使用。
+开箱即用，点击[下载链接](https://github.com/qianchuan0124/camera-water-mark/releases/download/v0.0.3/watermark-mac.zip)将压缩包下载到本地，解压到当前目录，双击“水印助手”即可打开APP进行使用。
 
 ### 源码运行
 
@@ -75,6 +76,18 @@
    # MacOS下打成可安装包
    pyinstaller waterMark-mac.spec
    ````
+
+
+
+## ⤴️更新日志
+
+### 2025.4.8 —— v0.0.3 更新
+
+1. 添加元信息编辑功能
+2. 添加海拔信息展示
+3. 添加自定义Logo的功能
+
+
 
 ## ⁉️问题解决
 
