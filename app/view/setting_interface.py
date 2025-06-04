@@ -5,7 +5,6 @@ from pathlib import Path
 import json
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     ImageLabel,
@@ -23,18 +22,15 @@ from qfluentwidgets import (
 )
 
 from app.config import cfg, STYLE_PATH
-from app.components.common_card import (
-    ComboBoxSettingCard,
-    SpinBoxSettingCard,
-    ColorSettingCard,
-    SwitchSettingCard
-)
+from app.components.common_card import ComboBoxSettingCard
 from app.config import ASSETS_PATH, CACHE_PATH
 from app.thread.image_handle_thread import ImageHandleTask, ImageHandleThread, HandleProgress, ImageHandleStatus
 from app.components.common_item import LoadingButton
-from app.components.custom_logo_path_card import CustomLogoPathCard
-from app.manager.font_manager import font_manager
-from app.entity.enums import DISPLAY_TYPE, LOGO_LAYOUT, MARK_MODE
+from app.entity.enums import MARK_MODE
+from app.layout.classical_layout import ClassicalLayout
+from app.layout.base_group import BaseGroup
+from app.layout.global_group import GlobalGroup
+from app.layout.logo_group import LogoGroup
 
 DEFAULT_BG = {
     "path": Path(f"{ASSETS_PATH}/default_bg.jpg"),
@@ -74,50 +70,8 @@ class SettingInterface(QWidget):
     def _initValues(self):
         # 读取样式信息
 
-        # 基础样式
-        self.baseBackgroundValue = QColor(cfg.backgroundColor.value)
-        self.baseFontName = cfg.baseFontName.value
-        self.boldFontName = cfg.boldFontName.value
-        self.baseFontSizeValue = cfg.baseFontSize.value
-        self.boldFontSizeValue = cfg.boldFontSize.value
-        self.baseQualityValue = cfg.baseQuality.value
-        self.radiusInfoValue = cfg.radiusInfo.value
-
         # 模式选择
         self.modeValue = MARK_MODE.key(cfg.markMode.value)
-
-        # 全局样式
-        self.useEquivalentFocalValue = cfg.useEquivalentFocal.value
-        self.useOriginRatioPaddingValue = cfg.useOriginRatioPadding.value
-        self.backgroundBlurValue = cfg.backgroundBlur.value
-        self.addShadowValue = cfg.addShadow.value
-        self.whiteMarginValue = cfg.whiteMargin.value
-        self.whiteMarginWidthValue = cfg.whiteMarginWidth.value
-
-        # LOGO样式
-        self.logoEnableValue = cfg.logoEnable.value
-        self.logoLayoutValue = LOGO_LAYOUT.LEFT if cfg.isLogoLeft else LOGO_LAYOUT.RIGHT
-        self.customLogoEnableValue = cfg.customLogoEnable.value
-        self.customLogoPathValue = cfg.customLogoPath.value
-
-        # 布局样式
-        self.leftTopTypeValue = DISPLAY_TYPE.from_str(cfg.leftTopType.value)
-        self.leftTopFontColorValue = QColor(cfg.leftTopFontColor.value)
-        self.leftTopBoldValue = cfg.leftTopBold.value
-
-        self.leftBottomTypeValue = DISPLAY_TYPE.from_str(
-            cfg.leftBottomType.value)
-        self.leftBottomFontColorValue = QColor(cfg.leftBottomFontColor.value)
-        self.leftBottomBoldValue = cfg.leftBottomBold.value
-
-        self.rightTopTypeValue = DISPLAY_TYPE.from_str(cfg.rightTopType.value)
-        self.rightTopFontColorValue = QColor(cfg.rightTopFontColor.value)
-        self.rightTopBoldValue = cfg.rightTopBold.value
-
-        self.rightBottomTypeValue = DISPLAY_TYPE.from_str(
-            cfg.rightBottomType.value)
-        self.rightBottomFontColorValue = QColor(cfg.rightBottomFontColor.value)
-        self.rightBottomBoldValue = cfg.rightBottomBold.value
 
     def _initSettingsArea(self):
         """初始化左侧设置区域"""
@@ -129,11 +83,11 @@ class SettingInterface(QWidget):
         self.settingsScrollArea.setWidgetResizable(True)
 
         # 创建设置组
-        self.baseGroup = SettingCardGroup(self.tr("基础"), self.settingsWidget)
+        self.baseGroup = BaseGroup(self.settingsWidget)
         self.modeGroup = SettingCardGroup(self.tr("模式"), self.settingsWidget)
-        self.globalGroup = SettingCardGroup(self.tr("全局"), self.settingsWidget)
-        self.logoGroup = SettingCardGroup(self.tr("LOGO"), self.settingsWidget)
-        self.layoutGroup = SettingCardGroup(self.tr("布局"), self.settingsWidget)
+        self.globalGroup = GlobalGroup(self.settingsWidget)
+        self.logoGroup = LogoGroup(self.settingsWidget)
+        self.classicalLayout = ClassicalLayout(self.settingsWidget)
 
     def _initPreviewArea(self):
         """初始化右侧预览区域"""
@@ -209,51 +163,6 @@ class SettingInterface(QWidget):
 
     def _initSettingCards(self):
         """初始化所有设置卡片"""
-        # 基础样式
-
-        # 背景颜色
-        self.baseBackground = ColorSettingCard(
-            self.baseBackgroundValue,
-            FIF.PALETTE,
-            self.tr("背景颜色"),
-            self.tr("设置照片背景颜色"),
-        )
-
-        # 标准字体
-        self.baseFont = ComboBoxSettingCard(
-            FIF.FONT,
-            self.tr("标准字体"),
-            self.tr("选择标准字体"),
-            texts=font_manager.font_families(),
-        )
-        self.baseFont.comboBox.setMaxVisibleItems(12)
-
-        # 粗体字体
-        self.boldFont = ComboBoxSettingCard(
-            FIF.FONT,
-            self.tr("粗体字体"),
-            self.tr("选择粗体字体"),
-            texts=font_manager.font_families(),
-        )
-        self.boldFont.comboBox.setMaxVisibleItems(12)
-
-        # 标准字体大小
-        self.baseFontSize = SpinBoxSettingCard(
-            FIF.FONT_SIZE,
-            self.tr("标准字号"),
-            self.tr("设置标准字号"),
-            minimum=1,
-            maximum=3,
-        )
-
-        # 粗体字体大小
-        self.boldFontSize = SpinBoxSettingCard(
-            FIF.FONT_SIZE,
-            self.tr("粗体字号"),
-            self.tr("设置粗体字号"),
-            minimum=1,
-            maximum=3,
-        )
 
         # 模式
         self.markMode = ComboBoxSettingCard(
@@ -263,248 +172,19 @@ class SettingInterface(QWidget):
             texts=MARK_MODE.all_values(),
         )
 
-        # 全局样式
-
-        # 渲染质量
-        self.baseQuality = SpinBoxSettingCard(
-            FIF.ZOOM,
-            self.tr("基础质量"),
-            self.tr("设置基础质量"),
-            minimum=1,
-            maximum=100,
-        )
-
-        # 圆角设置
-        self.radiusInfo = SpinBoxSettingCard(
-            FIF.ALIGNMENT,
-            self.tr("圆角大小"),
-            self.tr("设置圆角大小"),
-            minimum=0,
-            maximum=100,
-        )
-
-        # 使用等效聚焦
-        self.useEquivalentFocal = SwitchSettingCard(
-            FIF.PIN,
-            self.tr("使用等效焦距"),
-            self.tr("是否使用等效焦距"),
-            None,
-            self.globalGroup
-        )
-
-        # 使用原始比例填充
-        self.useOriginRatioPadding = SwitchSettingCard(
-            FIF.ALBUM,
-            self.tr("使用原始比例填充"),
-            self.tr("是否使用原始比例填充"),
-            None,
-            self.globalGroup
-        )
-
-        self.backgroundBlur = SwitchSettingCard(
-            FIF.BACKGROUND_FILL,
-            self.tr("背景模糊"),
-            self.tr("是否设置背景模糊"),
-            None,
-            self.globalGroup
-        )
-
-        # 添加阴影
-        self.addShadow = SwitchSettingCard(
-            FIF.LEAF,
-            self.tr("添加阴影"),
-            self.tr("是否添加阴影"),
-            None,
-            self.globalGroup
-        )
-
-        # 添加白色间距
-        self.whiteMargin = SwitchSettingCard(
-            FIF.COPY,
-            self.tr("白色间距"),
-            self.tr("是否添加白色间距"),
-            None,
-            self.globalGroup
-        )
-
-        # 白色间距宽度
-        self.whiteMarginWidth = SpinBoxSettingCard(
-            FIF.COPY,
-            self.tr("白色间距宽度"),
-            self.tr("设置白色间距宽度"),
-            minimum=0,
-            maximum=10,
-        )
-
-        # LOGO样式
-        self.logoEnable = SwitchSettingCard(
-            FIF.LAYOUT,
-            self.tr("展示LOGO"),
-            self.tr("是否展示LOGO"),
-            None,
-            self.logoGroup
-        )
-
-        self.logoLayout = ComboBoxSettingCard(
-            FIF.LAYOUT,
-            self.tr("LOGO布局"),
-            self.tr("设置LOGO布局样式"),
-            texts=LOGO_LAYOUT.all_values(),
-        )
-
-        self.customLogo = CustomLogoPathCard(self.logoGroup)
-
-        # 布局样式
-
-        # 左上角类型
-        self.leftTopType = ComboBoxSettingCard(
-            FIF.VIEW,
-            self.tr("左上角类型"),
-            self.tr("设置左上角展示信息的类型"),
-            texts=DISPLAY_TYPE.all_descriptions(),
-        )
-
-        # 左上角字体颜色
-        self.leftTopColor = ColorSettingCard(
-            self.leftTopFontColorValue,
-            FIF.PALETTE,
-            self.tr("左上角字体颜色"),
-            self.tr("设置左上角字体颜色"),
-        )
-
-        # 左上角字体粗细
-        self.leftTopBold = SwitchSettingCard(
-            FIF.FONT_SIZE,
-            self.tr("左上角字体是否加粗"),
-            self.tr("设置左上角字体是否加粗"),
-            None,
-            self.layoutGroup
-        )
-
-        # 左下角类型
-        self.leftBottomType = ComboBoxSettingCard(
-            FIF.VIEW,
-            self.tr("左下角类型"),
-            self.tr("设置左下角展示信息的类型"),
-            texts=DISPLAY_TYPE.all_descriptions(),
-        )
-
-        # 左下角字体颜色
-        self.leftBottomColor = ColorSettingCard(
-            self.leftBottomFontColorValue,
-            FIF.PALETTE,
-            self.tr("左下角字体颜色"),
-            self.tr("设置左上角字体颜色"),
-        )
-
-        # 左下角字体粗细
-        self.leftBottomBold = SwitchSettingCard(
-            FIF.FONT_SIZE,
-            self.tr("左下角字体是否加粗"),
-            self.tr("设置左上角字体是否加粗"),
-            None,
-            self.layoutGroup
-        )
-
-        # 右上角类型
-        self.rightTopType = ComboBoxSettingCard(
-            FIF.VIEW,
-            self.tr("右上角类型"),
-            self.tr("设置左上角展示信息的类型"),
-            texts=DISPLAY_TYPE.all_descriptions(),
-        )
-
-        # 右上角字体颜色
-        self.rightTopColor = ColorSettingCard(
-            self.rightTopFontColorValue,
-            FIF.PALETTE,
-            self.tr("右上角字体颜色"),
-            self.tr("设置左上角字体颜色"),
-        )
-
-        # 右上角字体粗细
-        self.rightTopBold = SwitchSettingCard(
-            FIF.FONT_SIZE,
-            self.tr("左上角字体是否加粗"),
-            self.tr("设置左上角字体是否加粗"),
-            None,
-            self.layoutGroup
-        )
-
-        # 右下角类型
-        self.rightBottomType = ComboBoxSettingCard(
-            FIF.VIEW,
-            self.tr("左下角类型"),
-            self.tr("设置左下角展示信息的类型"),
-            texts=DISPLAY_TYPE.all_descriptions(),
-        )
-
-        # 右下角字体颜色
-        self.rightBottomColor = ColorSettingCard(
-            self.rightBottomFontColorValue,
-            FIF.PALETTE,
-            self.tr("左上角字体颜色"),
-            self.tr("设置左上角字体颜色"),
-        )
-
-        # 右下角字体粗细
-        self.rightBottomBold = SwitchSettingCard(
-            FIF.FONT_SIZE,
-            self.tr("左上角字体是否加粗"),
-            self.tr("设置左上角字体是否加粗"),
-            None,
-            self.layoutGroup
-        )
-
     def _initLayout(self):
         """初始化布局"""
         # 添加卡片到组
 
-        # 基础样式
-        self.baseGroup.addSettingCard(self.baseBackground)
-        self.baseGroup.addSettingCard(self.baseFont)
-        self.baseGroup.addSettingCard(self.baseFontSize)
-        self.baseGroup.addSettingCard(self.boldFont)
-        self.baseGroup.addSettingCard(self.boldFontSize)
-        self.baseGroup.addSettingCard(self.baseQuality)
-        self.baseGroup.addSettingCard(self.radiusInfo)
-
         # 模式
         self.modeGroup.addSettingCard(self.markMode)
-
-        # LOGO样式
-        self.logoGroup.addSettingCard(self.logoEnable)
-        self.logoGroup.addSettingCard(self.logoLayout)
-        self.logoGroup.addSettingCard(self.customLogo)
-
-        # 全局样式
-        self.globalGroup.addSettingCard(self.useEquivalentFocal)
-        self.globalGroup.addSettingCard(self.useOriginRatioPadding)
-        self.globalGroup.addSettingCard(self.backgroundBlur)
-        self.globalGroup.addSettingCard(self.addShadow)
-        self.globalGroup.addSettingCard(self.whiteMargin)
-        self.globalGroup.addSettingCard(self.whiteMarginWidth)
-
-        # 布局样式
-        self.layoutGroup.addSettingCard(self.leftTopType)
-        self.layoutGroup.addSettingCard(self.leftTopColor)
-        self.layoutGroup.addSettingCard(self.leftTopBold)
-        self.layoutGroup.addSettingCard(self.leftBottomType)
-        self.layoutGroup.addSettingCard(self.leftBottomColor)
-        self.layoutGroup.addSettingCard(self.leftBottomBold)
-        self.layoutGroup.addSettingCard(self.rightTopType)
-        self.layoutGroup.addSettingCard(self.rightTopColor)
-        self.layoutGroup.addSettingCard(self.rightTopBold)
-        self.layoutGroup.addSettingCard(self.rightBottomType)
-        self.layoutGroup.addSettingCard(self.rightBottomColor)
-        self.layoutGroup.addSettingCard(self.rightBottomBold)
 
         # 添加组到布局
         self.settingsLayout.addWidget(self.baseGroup)
         self.settingsLayout.addWidget(self.modeGroup)
         self.settingsLayout.addWidget(self.globalGroup)
         self.settingsLayout.addWidget(self.logoGroup)
-        self.settingsLayout.addWidget(self.layoutGroup)
+        self.settingsLayout.addWidget(self.classicalLayout)
         self.settingsLayout.addStretch(1)
 
         # 添加左右两侧到主布局
@@ -529,80 +209,16 @@ class SettingInterface(QWidget):
     def __setSettings(self):
         # 设置样式到UI上
 
-        # 基础样式
-        self.baseBackground.setColor(self.baseBackgroundValue)
-        self.baseFont.comboBox.setCurrentText(self.baseFontName)
-        self.boldFont.comboBox.setCurrentText(self.boldFontName)
-        self.baseQuality.setValue(self.baseQualityValue)
-        self.radiusInfo.setValue(self.radiusInfoValue)
-        self.baseFontSize.setValue(self.baseFontSizeValue)
-        self.boldFontSize.setValue(self.boldFontSizeValue)
-
         # 模式
         self.markMode.comboBox.setCurrentText(self.modeValue.value)
-
-        # 全局样式
-        self.useEquivalentFocal.setValue(self.useEquivalentFocalValue)
-        self.useOriginRatioPadding.setValue(self.useOriginRatioPaddingValue)
-        self.backgroundBlur.setValue(self.backgroundBlurValue)
-        self.addShadow.setValue(self.addShadowValue)
-        self.whiteMargin.setValue(self.whiteMarginValue)
-        self.whiteMarginWidth.setValue(self.whiteMarginWidthValue)
-
-        # LOGO样式
-        self.logoEnable.setValue(self.logoEnableValue)
-        self.logoLayout.comboBox.setCurrentText(self.logoLayoutValue.value)
-        self.customLogo.setChecked(self.customLogoEnableValue)
-        self.customLogo.setPath(self.customLogoPathValue)
-
-        # 布局样式
-        self.leftTopType.comboBox.setCurrentText(
-            self.leftTopTypeValue.description)
-        self.leftTopColor.setColor(self.leftTopFontColorValue)
-        self.leftTopBold.setValue(self.leftTopBoldValue)
-
-        self.leftBottomType.comboBox.setCurrentText(
-            self.leftBottomTypeValue.description)
-        self.leftBottomColor.setColor(self.leftBottomFontColorValue)
-        self.leftBottomBold.setValue(self.leftBottomBoldValue)
-
-        self.rightTopType.comboBox.setCurrentText(
-            self.rightTopTypeValue.description)
-        self.rightTopColor.setColor(self.rightTopFontColorValue)
-        self.rightTopBold.setValue(self.rightTopBoldValue)
-
-        self.rightBottomType.comboBox.setCurrentText(
-            self.rightBottomTypeValue.description)
-        self.rightBottomColor.setColor(self.rightBottomFontColorValue)
-        self.rightBottomBold.setValue(self.rightBottomBoldValue)
 
         self.__setInitHiddens()
 
     def __setInitHiddens(self):
-        self.logoEnable.setHidden(self.modeValue.isSimple())
-        self.logoLayout.setHidden(
-            True if self.modeValue.isSimple() else not self.logoEnable)
-        self.customLogo.setHidden(
-            True if self.modeValue.isSimple() else not self.logoEnable)
+        self.logoGroup.set_sub_hiddens(self.modeValue.isSimple())
 
         self.logoGroup.setHidden(self.modeValue.isSimple())
-        self.layoutGroup.setHidden(self.modeValue.isSimple())
-
-        # self.leftTopType.setHidden(self.modeValue.isSimple())
-        # self.leftTopColor.setHidden(self.modeValue.isSimple())
-        # self.leftTopBold.setHidden(self.modeValue.isSimple())
-
-        # self.leftBottomType.setHidden(self.modeValue.isSimple())
-        # self.leftBottomColor.setHidden(self.modeValue.isSimple())
-        # self.leftBottomBold.setHidden(self.modeValue.isSimple())
-
-        # self.rightTopType.setHidden(self.modeValue.isSimple())
-        # self.rightTopColor.setHidden(self.modeValue.isSimple())
-        # self.rightTopBold.setHidden(self.modeValue.isSimple())
-
-        # self.rightBottomType.setHidden(self.modeValue.isSimple())
-        # self.rightBottomColor.setHidden(self.modeValue.isSimple())
-        # self.rightBottomBold.setHidden(self.modeValue.isSimple())
+        self.classicalLayout.setHidden(self.modeValue.isSimple())
 
     def __setValues(self):
         """设置初始值"""
@@ -636,82 +252,8 @@ class SettingInterface(QWidget):
         """连接所有设置变更的信号到预览更新函数"""
         # 监听UI上的改变，绑定到样式数据上
 
-        # 基础样式
-        self.baseBackground.colorChanged.connect(
-            lambda text: setattr(self, "baseBackgroundValue", text))
-        self.baseFont.currentTextChanged.connect(
-            lambda text: setattr(self, "baseFontName", text))
-        self.boldFont.currentTextChanged.connect(
-            lambda text: setattr(self, "boldFontName", text))
-        self.baseFontSize.valueChanged.connect(
-            lambda text: setattr(self, "baseFontSizeValue", text))
-        self.boldFontSize.valueChanged.connect(
-            lambda text: setattr(self, "boldFontSizeValue", text))
-        self.baseQuality.valueChanged.connect(
-            lambda text: setattr(self, "baseQualityValue", text))
-        self.radiusInfo.valueChanged.connect(
-            lambda text: setattr(self, "radiusInfoValue", text))
-
         # 模式
         self.markMode.currentTextChanged.connect(self.on_mark_mode_change)
-
-        # 全局样式
-        self.whiteMarginWidth.valueChanged.connect(
-            lambda text: setattr(self, "whiteMarginWidthValue", text))
-        self.useEquivalentFocal.checkedChanged.connect(
-            lambda text: setattr(self, "useEquivalentFocalValue", text))
-        self.useOriginRatioPadding.checkedChanged.connect(
-            lambda text: setattr(self, "useOriginRatioPaddingValue", text))
-        self.backgroundBlur.checkedChanged.connect(
-            lambda text: setattr(self, "backgroundBlurValue", text))
-        self.addShadow.checkedChanged.connect(
-            lambda text: setattr(self, "addShadowValue", text))
-        self.whiteMargin.checkedChanged.connect(
-            lambda text: setattr(self, "whiteMarginValue", text))
-
-        # LOGO样式
-
-        self.logoEnable.checkedChanged.connect(self.onLogoEnableChanged)
-        self.logoLayout.currentTextChanged.connect(lambda text: setattr(
-            self, "logoLayoutValue", LOGO_LAYOUT.get_enum(text)))
-        self.customLogo.checkedChanged.connect(lambda text: setattr(
-            self, "customLogoEnableValue", text))
-        self.customLogo.pathChanged.connect(
-            lambda text: setattr(self, "customLogoPathValue", text))
-
-        # 布局样式
-
-        # 左上角
-        self.leftTopType.currentTextChanged.connect(
-            lambda text: setattr(self, "leftTopTypeValue", DISPLAY_TYPE.from_desc(text)))
-        self.leftTopColor.colorChanged.connect(
-            lambda text: setattr(self, "leftTopFontColorValue", text))
-        self.leftTopBold.checkedChanged.connect(
-            lambda text: setattr(self, "leftTopBoldValue", text))
-
-        # 左下角
-        self.leftBottomType.currentTextChanged.connect(
-            lambda text: setattr(self, "leftBottomTypeValue", DISPLAY_TYPE.from_desc(text)))
-        self.leftBottomColor.colorChanged.connect(
-            lambda text: setattr(self, "leftBottomFontColorValue", text))
-        self.leftBottomBold.checkedChanged.connect(
-            lambda text: setattr(self, "leftBottomBoldValue", text))
-
-        # 右上角
-        self.rightTopType.currentTextChanged.connect(
-            lambda text: setattr(self, "rightTopTypeValue", DISPLAY_TYPE.from_desc(text)))
-        self.rightTopColor.colorChanged.connect(
-            lambda text: setattr(self, "rightTopFontColorValue", text))
-        self.rightTopBold.checkedChanged.connect(
-            lambda text: setattr(self, "rightTopBoldValue", text))
-
-        # 右下角
-        self.rightBottomType.currentTextChanged.connect(
-            lambda text: setattr(self, "rightBottomTypeValue", DISPLAY_TYPE.from_desc(text)))
-        self.rightBottomColor.colorChanged.connect(
-            lambda text: setattr(self, "rightBottomFontColorValue", text))
-        self.rightBottomBold.checkedChanged.connect(
-            lambda text: setattr(self, "rightBottomBoldValue", text))
 
         # 连接样式切换信号
         self.styleNameComboBox.currentTextChanged.connect(self.loadStyle)
@@ -722,11 +264,6 @@ class SettingInterface(QWidget):
     def on_mark_mode_change(self):
         self.modeValue = MARK_MODE.get_enum(self.markMode.comboBox.text())
         self.__setInitHiddens()
-
-    def onLogoEnableChanged(self, logoEnable):
-        self.logoEnableValue = logoEnable
-        self.logoLayout.setHidden(not self.logoEnableValue)
-        self.customLogo.setHidden(not self.logoEnableValue)
 
     def on_save_button_tapped(self):
         self.saveStyle(cfg.styleName.value)
@@ -783,7 +320,8 @@ class SettingInterface(QWidget):
                 parent=self,
             )
         else:
-            info = task.errorInfo if len(task.errorInfo) > 0 else self.tr("位置错误")
+            info = task.errorInfo if len(
+                task.errorInfo) > 0 else self.tr("位置错误")
             self.renderButton.stop_loading()
             InfoBar.error(
                 self.tr("渲染错误"),
@@ -824,61 +362,16 @@ class SettingInterface(QWidget):
             style_content = json.load(f)
 
         # 解析样式内容
-
-        # 基础样式
-        self.baseBackgroundValue = QColor(
-            style_content["Base"]["BackgroundColor"])
-        self.baseFontName = style_content["Base"]["BaseFontName"]
-        self.baseFontSizeValue = style_content["Base"]["BaseFontSize"]
-        self.boldFontName = style_content["Base"]["BoldFontName"]
-        self.boldFontSizeValue = style_content["Base"]["BoldFontSize"]
-        self.baseQualityValue = int(style_content["Base"]["BaseQuality"])
-        self.radiusInfoValue = int(style_content["Base"]["RadiusInfo"])
+        self.baseGroup.load_style(style_content)
 
         # 模式
         self.modeValue = MARK_MODE.key(style_content["Mode"]["MarkMode"])
 
-        # 全局样式
-        self.useEquivalentFocalValue = style_content["Global"]["UseEquivalentFocal"]
-        self.useOriginRatioPaddingValue = style_content["Global"]["UseOriginRatioPadding"]
-        self.backgroundBlurValue = style_content["Global"]["BackgroundBlur"]
-        self.addShadowValue = style_content["Global"]["AddShadow"]
-        self.whiteMarginValue = style_content["Global"]["WhiteMargin"]
-        self.whiteMarginWidthValue = int(
-            style_content["Global"]["WhiteMarginWidth"])
+        self.globalGroup.load_style(style_content)
 
-        # LOGO布局
-        self.logoEnableValue = style_content["LOGO"]["LogoEnable"]
-        self.logoLayoutValue = LOGO_LAYOUT.LEFT if style_content[
-            "LOGO"]["isLogoLeft"] else LOGO_LAYOUT.RIGHT
-        self.customLogoEnableValue = style_content["LOGO"]["CustomLogoEnable"]
-        self.customLogoPathValue = style_content["LOGO"]["CustomLogoPath"]
+        self.logoGroup.load_style(style_content)
 
-        # 布局样式
-        self.leftTopTypeValue = DISPLAY_TYPE.from_str(
-            style_content["Layout"]["LeftTopType"])
-        self.leftTopFontColorValue = QColor(
-            style_content["Layout"]["LeftTopFontColor"])
-        self.leftTopBoldValue = style_content["Layout"]["LeftTopBold"]
-
-        self.leftBottomTypeValue = DISPLAY_TYPE.from_str(
-            style_content["Layout"]["LeftBottomType"])
-        self.leftBottomFontColorValue = QColor(
-            style_content["Layout"]["LeftBottomFontColor"])
-        self.leftBottomBoldValue = style_content["Layout"]["LeftBottomBold"]
-
-        self.rightTopTypeValue = DISPLAY_TYPE.from_str(
-            style_content["Layout"]["RightTopType"])
-        self.rightTopFontColorValue = QColor(
-            style_content["Layout"]["RightTopFontColor"])
-        self.rightTopBoldValue = style_content["Layout"]["RightTopBold"]
-
-        self.rightBottomTypeValue = DISPLAY_TYPE.from_str(
-            style_content["Layout"]["RightBottomType"])
-        self.rightBottomFontColorValue = QColor(
-            style_content["Layout"]["RightBottomFontColor"])
-        self.rightBottomBoldValue = style_content["Layout"]["RightBottomBold"]
-
+        self.classicalLayout.load_style(style_content)
         self.__setSettings()
 
         cfg.set(cfg.styleName, style_name)
@@ -946,49 +439,16 @@ class SettingInterface(QWidget):
         # 确保样式目录存在
         Path(STYLE_PATH).mkdir(parents=True, exist_ok=True)
 
-        # 基础样式
-        cfg.set(cfg.backgroundColor, self.baseBackgroundValue.name())
-        cfg.set(cfg.baseFontName, self.baseFontName)
-        cfg.set(cfg.boldFontName, self.boldFontName)
-        cfg.set(cfg.baseFontSize, self.baseFontSizeValue)
-        cfg.set(cfg.boldFontSize, self.boldFontSizeValue)
-        cfg.set(cfg.baseQuality, self.baseQualityValue)
-        cfg.set(cfg.radiusInfo, self.radiusInfoValue)
+        self.baseGroup.save_style()
 
         # 模式
         cfg.set(cfg.markMode, self.modeValue.info())
 
-        # 全局样式
-        cfg.set(cfg.useEquivalentFocal, self.useEquivalentFocalValue)
-        cfg.set(cfg.useOriginRatioPadding, self.useOriginRatioPaddingValue)
-        cfg.set(cfg.backgroundBlur, self.backgroundBlurValue)
-        cfg.set(cfg.addShadow, self.addShadowValue)
-        cfg.set(cfg.whiteMargin, self.whiteMarginValue)
-        cfg.set(cfg.whiteMarginWidth, self.whiteMarginWidthValue)
+        self.globalGroup.save_style()
 
-        # LOGO布局
-        cfg.set(cfg.logoEnable, self.logoEnableValue)
-        cfg.set(cfg.isLogoLeft, self.logoLayoutValue.isLeft())
-        cfg.set(cfg.customLogoEnable, self.customLogoEnableValue)
-        cfg.set(cfg.customLogoPath, self.customLogoPathValue)
+        self.logoGroup.save_style()
 
-        # 布局样式
-        cfg.set(cfg.leftTopType, self.leftTopTypeValue.value)
-        cfg.set(cfg.leftTopFontColor, self.leftTopFontColorValue.name())
-        cfg.set(cfg.leftTopBold, self.leftTopBoldValue)
-
-        cfg.set(cfg.leftBottomType, self.leftBottomTypeValue.value)
-        cfg.set(cfg.leftBottomFontColor, self.leftBottomFontColorValue.name())
-        cfg.set(cfg.leftBottomBold, self.leftBottomBoldValue)
-
-        cfg.set(cfg.rightTopType, self.rightTopTypeValue.value)
-        cfg.set(cfg.rightTopFontColor, self.rightTopFontColorValue.name())
-        cfg.set(cfg.rightTopBold, self.rightTopBoldValue)
-
-        cfg.set(cfg.rightBottomType, self.rightBottomTypeValue.value)
-        cfg.set(cfg.rightBottomFontColor,
-                self.rightBottomFontColorValue.name())
-        cfg.set(cfg.rightBottomBold, self.rightBottomBoldValue)
+        self.classicalLayout.save_style()
 
         # # 生成样式内容并保存
         config_dict = cfg.to_dict()
@@ -1000,6 +460,10 @@ class SettingInterface(QWidget):
     def resetStyle(self):
         self._initValues()
         self.__setSettings()
+        self.classicalLayout.reset_style()
+        self.logoGroup.reset_style()
+        self.baseGroup.reset_style()
+        self.globalGroup.reset_style()
 
     def renderStyle(self):
         if not self.renderButton.is_loading:

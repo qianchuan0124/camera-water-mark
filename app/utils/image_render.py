@@ -14,7 +14,7 @@ def raduis() -> int:
     return max(100 - int(cfg.radiusInfo.value), 1)
 
 
-def add_background_blur(img: Image.Image) -> Image.Image:
+def add_background_blur(img: Image.Image, bottom_padding=0) -> Image.Image:
     """给图片添加模糊背景效果
     参数:
         img: 输入图片(支持任意格式)
@@ -35,14 +35,15 @@ def add_background_blur(img: Image.Image) -> Image.Image:
         # 扩展尺寸
         new_size = (
             int(img.width * (1 + PADDING_PERCENT_IN_BACKGROUND)),
-            int(img.height * (1 + PADDING_PERCENT_IN_BACKGROUND))
+            int(img.height * (1 + PADDING_PERCENT_IN_BACKGROUND) + bottom_padding)
         )
         blurred_bg = bg.resize(new_size)
         foreground = add_rounded_corners(img)
 
         # 计算居中位置
         x_offset = int((blurred_bg.width - foreground.width) / 2)
-        y_offset = int((blurred_bg.height - foreground.height) / 2)
+        y_offset = int(
+            (blurred_bg.height - bottom_padding - foreground.height) / 2)
 
         # 创建结果画布
         result = blurred_bg.convert("RGBA")

@@ -381,6 +381,9 @@ class ColorPickerButton(QToolButton):
             self.color, self.tr("Choose ") +
             self.title, self.window(), self.enableAlpha
         )
+
+        w.opacityLineEdit.setText(
+            str(int(round(self.color.alpha() / 255, 2) * 100)))
         w.colorChanged.connect(self.__onColorChanged)
         w.exec()
 

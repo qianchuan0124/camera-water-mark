@@ -157,20 +157,21 @@ class ImageHandleThread(QThread):
         self.finished.emit(HandleProgress(self.tasks, 100))
 
     def hanle_task(self, image_info: ImageInfo):
+        mode: MARK_MODE = MARK_MODE.key(cfg.markMode.value)
         if (cfg.addShadow.value):
             image = add_shadow(self.get_watermark_img())
             self.update_watermark_img(image)
 
         if (cfg.backgroundBlur.value):
-            image = add_background_blur(self.get_watermark_img())
+            image = add_background_blur(
+                self.get_watermark_img(), bottom_padding=self.cal_watermark_height(image_info, mode))
             self.update_watermark_img(image)
 
         if (cfg.whiteMargin.value):
             image = add_white_margin(self.get_watermark_img())
             self.update_watermark_img(image)
 
-        model: MARK_MODE = MARK_MODE.key(cfg.markMode.value)
-        if model == MARK_MODE.SIMPLE:
+        if mode == MARK_MODE.SIMPLE:
             self.simple_mode(image_info)
         else:
             self.standard_mode(image_info)
@@ -179,21 +180,26 @@ class ImageHandleThread(QThread):
         ratio = .16 if self.get_ratio() >= 1 else .1
         padding_ratio = .5 if self.get_ratio() >= 1 else .5
 
+        self.bg_color = cfg.backgroundColor.value
+
         first_text = text_to_image('Shot on',
                                    font_manager.get_font(),
                                    font_manager.get_bold_font(),
                                    is_bold=False,
-                                   fill='#212121')
+                                   fill='#212121',
+                                   color=self.bg_color)
         model = text_to_image(image_info.model().replace(r'/', ' ').replace(r'_', ' '),
                               font_manager.get_font(),
                               font_manager.get_bold_font(),
                               is_bold=True,
-                              fill='#D32F2F')
+                              fill='#D32F2F',
+                              color=self.bg_color)
         make = text_to_image(image_info.make().split(' ')[0],
                              font_manager.get_font(),
                              font_manager.get_bold_font(),
                              is_bold=True,
-                             fill='#212121')
+                             fill='#212121',
+                             color=self.bg_color)
         first_line = merge_images(
             [first_text, MIDDLE_HORIZONTAL_GAP, model, MIDDLE_HORIZONTAL_GAP, make], 0, 1)
         second_line_text = image_info.get_param_str()
@@ -201,7 +207,8 @@ class ImageHandleThread(QThread):
                                     font_manager.get_font(),
                                     font_manager.get_bold_font(),
                                     is_bold=False,
-                                    fill='#9E9E9E')
+                                    fill='#9E9E9E',
+                                    color=self.bg_color)
         image = merge_images(
             [first_line, MIDDLE_VERTICAL_GAP, second_line], 1, 0)
         height = self.get_height() * ratio * padding_ratio
@@ -211,11 +218,20 @@ class ImageHandleThread(QThread):
 
         watermark = ImageOps.expand(
             image, (horizontal_padding, vertical_padding), fill=TRANSPARENT)
-        bg = Image.new('RGBA', watermark.size, color='white')
-        bg = Image.alpha_composite(bg, watermark)
 
-        watermark_img = merge_images([self.get_watermark_img(), bg], 1, 1)
-        self.update_watermark_img(watermark_img)
+        # bg = Image.new('RGBA', watermark.size, color='white')
+        # bg = Image.alpha_composite(bg, watermark)
+
+        # watermark_img = merge_images([self.get_watermark_img(), bg], 1, 1)
+        # self.update_watermark_img(watermark_img)
+
+        # 将水印图片底部对齐作为前景叠加到原图
+        bg = self.get_watermark_img().convert('RGBA')
+        fg = Image.new('RGBA', bg.size, TRANSPARENT)
+        fg.paste(watermark, (0, bg.height - watermark.height), watermark)
+        result = Image.alpha_composite(bg, fg)
+
+        self.update_watermark_img(result)
 
     def standard_mode(self, image_info: ImageInfo):
         self.bg_color = cfg.backgroundColor.value
@@ -237,38 +253,48 @@ class ImageHandleThread(QThread):
                                      font_manager.get_font(),
                                      font_manager.get_bold_font(),
                                      is_bold=cfg.leftTopBold.value,
-                                     fill=cfg.leftTopFontColor.value)
+                                     fill=cfg.leftTopFontColor.value,
+                                     color=self.bg_color)
             left_bottom = text_to_image(image_info.parse_exif_info(cfg.leftBottomType.value),
                                         font_manager.get_font(),
                                         font_manager.get_bold_font(),
                                         is_bold=cfg.leftBottomBold.value,
-                                        fill=cfg.leftBottomFontColor.value)
-            left = concatenate_image([left_top, empty_padding, left_bottom])
+                                        fill=cfg.leftBottomFontColor.value,
+                                        color=self.bg_color)
+            left = concatenate_image(
+                [left_top, empty_padding, left_bottom], color=self.bg_color)
             # 填充右边的文字内容
             right_top = text_to_image(image_info.parse_exif_info(cfg.rightTopType.value),
                                       font_manager.get_font(),
                                       font_manager.get_bold_font(),
                                       is_bold=cfg.rightTopBold.value,
-                                      fill=cfg.rightTopFontColor.value)
+                                      fill=cfg.rightTopFontColor.value,
+                                      color=self.bg_color)
             right_bottom = text_to_image(image_info.parse_exif_info(cfg.rightBottomType.value),
                                          font_manager.get_font(),
                                          font_manager.get_bold_font(),
                                          is_bold=cfg.rightBottomBold.value,
-                                         fill=cfg.rightBottomFontColor.value)
-            right = concatenate_image([right_top, empty_padding, right_bottom])
+                                         fill=cfg.rightBottomFontColor.value,
+                                         color=self.bg_color)
+            right = concatenate_image(
+                [right_top, empty_padding, right_bottom], color=self.bg_color)
 
         # 将左右两边的文字内容等比例缩放到相同的高度
         max_height = max(left.height, right.height)
-        left = padding_image(left, int(max_height * padding_ratio), 'tb')
-        right = padding_image(right, int(max_height * padding_ratio), 't')
-        right = padding_image(right, left.height - right.height, 'b')
+        left = padding_image(
+            left, int(max_height * padding_ratio), 'tb', color=self.bg_color)
+        right = padding_image(right, int(
+            max_height * padding_ratio), 't', color=self.bg_color)
+        right = padding_image(right, left.height -
+                              right.height, 'b',  color=self.bg_color)
 
         logo = self.load_logo(image_info.logo())
         if cfg.logoEnable.value:
             if cfg.isLogoLeft.value:
                 # 如果 logo 在左边
                 line = LINE_TRANSPARENT.copy()
-                logo = padding_image(logo, int(padding_ratio * logo.height))
+                logo = padding_image(
+                    logo, int(padding_ratio * logo.height), color=self.bg_color)
                 append_image_by_side(
                     watermark, [line, logo, left], is_start=logo is None)
                 append_image_by_side(watermark, [right], side='right')
@@ -295,17 +321,136 @@ class ImageHandleThread(QThread):
 
         # 缩放水印的大小
         watermark = resize_image_with_width(watermark, self.get_width())
-        # 将水印图片放置在原始图片的下方
-        bg = ImageOps.expand(self.get_watermark_img().convert('RGBA'),
-                             border=(0, 0, 0, watermark.height),
-                             fill=self.bg_color)
-        fg = ImageOps.expand(watermark, border=(
-            0, self.get_height(), 0, 0), fill=TRANSPARENT)
+        # # 将水印图片放置在原始图片的下方
+        # bg = ImageOps.expand(self.get_watermark_img().convert('RGBA'),
+        #                      border=(0, 0, 0, watermark.height),
+        #                      fill=TRANSPARENT)
+        # fg = ImageOps.expand(watermark, border=(
+        #     0, self.get_height(), 0, 0), fill=TRANSPARENT)
+        # result = Image.alpha_composite(bg, fg)
+
+        # 将水印图片底部对齐作为前景叠加到原图
+        bg = self.get_watermark_img().convert('RGBA')
+        fg = Image.new('RGBA', bg.size, TRANSPARENT)
+        fg.paste(watermark, (0, bg.height - watermark.height), watermark)
         result = Image.alpha_composite(bg, fg)
         watermark.close()
+
         # 更新图片对象
-        result = ImageOps.exif_transpose(result).convert('RGB')
+        result = ImageOps.exif_transpose(result).convert('RGBA')
         self.update_watermark_img(result)
+
+    def cal_watermark_height(self, image_info: ImageInfo, mode: MARK_MODE):
+        """
+        高效计算 simple_mode 水印高度（不生成图片对象，仅用字体bbox和拼接逻辑）
+        :param image_info: 图片信息
+        :param mode: 水印模式
+        :return: 水印的高度
+        """
+        if mode == MARK_MODE.SIMPLE:
+            return self.cal_simple_watermark_height(image_info)
+        else:
+            return self.cal_standard_watermark_height(image_info)
+
+    def cal_simple_watermark_height(self, image_info: ImageInfo):
+        """
+        高效计算 simple_mode 水印高度（不生成图片对象，仅用字体bbox和拼接逻辑）
+        :param image_info: 图片信息
+        :return: 水印的高度
+        """
+        ratio = .16 if self.get_ratio() >= 1 else .1
+        padding_ratio = .5 if self.get_ratio() >= 1 else .5
+
+        font = font_manager.get_font()
+        bold_font = font_manager.get_bold_font()
+
+        # 第一行内容
+        def get_text_height(text, is_bold):
+            f = bold_font if is_bold else font
+            bbox = f.getbbox(text if text else " ")
+            return bbox[3] - bbox[1]
+
+        first_text_height = get_text_height('Shot on', False)
+        model_text = image_info.model().replace(r'/', ' ').replace(r'_', ' ')
+        model_height = get_text_height(model_text, True)
+        make_text = image_info.make().split(' ')[0]
+        make_height = get_text_height(make_text, True)
+
+        # 第一行高度取最大（横向拼接，通常高度一致，这里取最大更保险）
+        first_line_height = max(first_text_height, model_height, make_height)
+
+        # 第二行内容
+        second_line_text = image_info.get_param_str()
+        second_line_height = get_text_height(second_line_text, False)
+
+        # MIDDLE_VERTICAL_GAP 高度（与常量一致，100）
+        middle_vertical_gap_height = 100
+
+        # 合成内容高度
+        content_height = first_line_height + \
+            middle_vertical_gap_height + second_line_height
+
+        # 目标高度（resize_image_with_height 后的目标高度）
+        target_height = int(self.get_height() * ratio * padding_ratio)
+
+        # 实际水印区域高度（上下padding，居中放置内容）
+        vertical_padding = int((self.get_height() * ratio - target_height) / 2)
+        total_height = target_height + 2 * vertical_padding
+
+        return total_height
+
+    def cal_standard_watermark_height(self, image_info: ImageInfo):
+        """
+        高效计算水印高度（不生成图片对象，仅用字体bbox和拼接逻辑）
+        :param image_info: 图片信息
+        :return: 水印的高度
+        """
+        # 1. 获取 padding_ratio
+        padding_ratio = (.52 if self.get_ratio() >= 1 else .7) - \
+            0.04 * cfg.get_font_padding_level()
+
+        # 2. 获取字体
+        font = font_manager.get_font()
+        bold_font = font_manager.get_bold_font()
+
+        # 3. 获取各段文本内容
+        left_top_text = image_info.parse_exif_info(cfg.leftTopType.value)
+        left_bottom_text = image_info.parse_exif_info(cfg.leftBottomType.value)
+        right_top_text = image_info.parse_exif_info(cfg.rightTopType.value)
+        right_bottom_text = image_info.parse_exif_info(
+            cfg.rightBottomType.value)
+
+        # 4. 计算每段文本高度
+        def get_text_height(text, is_bold):
+            f = bold_font if is_bold else font
+            bbox = f.getbbox(text if text else " ")
+            return bbox[3] - bbox[1]
+
+        left_top_height = get_text_height(left_top_text, cfg.leftTopBold.value)
+        left_bottom_height = get_text_height(
+            left_bottom_text, cfg.leftBottomBold.value)
+        right_top_height = get_text_height(
+            right_top_text, cfg.rightTopBold.value)
+        right_bottom_height = get_text_height(
+            right_bottom_text, cfg.rightBottomBold.value)
+
+        # 5. empty_padding 高度（与标准方法一致，100）
+        empty_padding_height = 100
+
+        # 6. 拼接左右内容高度
+        left_height = left_top_height + left_bottom_height
+        right_height = right_top_height + right_bottom_height
+
+        # 7. 取最大内容高度
+        max_height = max(max(left_height, right_height), empty_padding_height)
+
+        # 8. 计算上下 padding
+        padding = int(max_height * padding_ratio)
+
+        # 9. 总高度
+        total_height = max_height + 2 * padding
+
+        return total_height
 
     def fix_orientation(self, image_info: ImageInfo):
         self.orientation = image_info.exif[ExifId.ORIENTATION.value] if ExifId.ORIENTATION.value in image_info.exif else 1
@@ -341,8 +486,8 @@ class ImageHandleThread(QThread):
         else:
             pass
 
-        if self.watermark_img.mode != 'RGB':
-            self.watermark_img = self.watermark_img.convert('RGB')
+        # if self.watermark_img.mode != 'RGB':
+        #     self.watermark_img = self.watermark_img.convert('RGB')
 
         if 'exif' in self.image.info:
             self.watermark_img.save(target_path, quality=quality, encoding='utf-8',
