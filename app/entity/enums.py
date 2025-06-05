@@ -188,6 +188,7 @@ class DISPLAY_TYPE(Enum):
     LENS_MAKE_LENS_MODEL = "LensMake_LensModel"
     CAMERA_MODEL_LENS_MODEL = "CameraModel_LensModel"
     CAMERA_MAKE_CAMERA_MODEL = "CameraMake_CameraModel"
+    NONE = "None"
 
     # 描述映射（类方法实现）
     @classmethod
@@ -201,7 +202,8 @@ class DISPLAY_TYPE(Enum):
             cls.LOCATION.value: "地理位置",
             cls.LENS_MAKE_LENS_MODEL.value: "镜头厂商 + 镜头型号",
             cls.CAMERA_MAKE_CAMERA_MODEL.value: "相机厂商 + 相机型号",
-            cls.CAMERA_MODEL_LENS_MODEL.value: "相机型号 + 镜头型号"
+            cls.CAMERA_MODEL_LENS_MODEL.value: "相机型号 + 镜头型号",
+            cls.NONE.value: "不展示"
         }
 
     @classmethod
@@ -215,7 +217,8 @@ class DISPLAY_TYPE(Enum):
             "地理位置": cls.LOCATION,
             "镜头厂商 + 镜头型号": cls.LENS_MAKE_LENS_MODEL,
             "相机厂商 + 相机型号": cls.CAMERA_MAKE_CAMERA_MODEL,
-            "相机型号 + 镜头型号": cls.CAMERA_MODEL_LENS_MODEL
+            "相机型号 + 镜头型号": cls.CAMERA_MODEL_LENS_MODEL,
+            "不展示": cls.NONE
         }
 
     @property

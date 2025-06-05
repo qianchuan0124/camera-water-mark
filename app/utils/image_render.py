@@ -26,7 +26,7 @@ def add_background_blur(img: Image.Image, bottom_padding=0) -> Image.Image:
         bg = img.convert('RGB')
 
         # 应用高斯模糊
-        bg = bg.filter(ImageFilter.GaussianBlur(GAUSSIAN_KERNEL_RADIUS))
+        bg = bg.filter(ImageFilter.GaussianBlur(cfg.blurExtent.value))
 
         # 调整亮度
         white = Image.new('RGB', bg.size, (255, 255, 255))
@@ -34,16 +34,15 @@ def add_background_blur(img: Image.Image, bottom_padding=0) -> Image.Image:
 
         # 扩展尺寸
         new_size = (
-            int(img.width * (1 + PADDING_PERCENT_IN_BACKGROUND)),
-            int(img.height * (1 + PADDING_PERCENT_IN_BACKGROUND) + bottom_padding)
+            int(img.width * (1 + cfg.blurHorizontalPadding.value * 2)),
+            int(img.height * (1 + cfg.blurTopPadding.value + cfg.blurBottomPadding.value) + bottom_padding)
         )
         blurred_bg = bg.resize(new_size)
         foreground = add_rounded_corners(img)
 
         # 计算居中位置
         x_offset = int((blurred_bg.width - foreground.width) / 2)
-        y_offset = int(
-            (blurred_bg.height - bottom_padding - foreground.height) / 2)
+        y_offset = int(img.height * cfg.blurTopPadding.value)
 
         # 创建结果画布
         result = blurred_bg.convert("RGBA")

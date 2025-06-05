@@ -27,7 +27,8 @@ from app.config import ASSETS_PATH, CACHE_PATH
 from app.thread.image_handle_thread import ImageHandleTask, ImageHandleThread, HandleProgress, ImageHandleStatus
 from app.components.common_item import LoadingButton
 from app.entity.enums import MARK_MODE
-from app.layout.classical_layout import ClassicalLayout
+from app.layout.standard_layout import StandardLayout
+from app.layout.simple_layout import SimpleLayout
 from app.layout.base_group import BaseGroup
 from app.layout.global_group import GlobalGroup
 from app.layout.logo_group import LogoGroup
@@ -87,7 +88,8 @@ class SettingInterface(QWidget):
         self.modeGroup = SettingCardGroup(self.tr("模式"), self.settingsWidget)
         self.globalGroup = GlobalGroup(self.settingsWidget)
         self.logoGroup = LogoGroup(self.settingsWidget)
-        self.classicalLayout = ClassicalLayout(self.settingsWidget)
+        self.standardLayout = StandardLayout(self.settingsWidget)
+        self.simpleLayout = SimpleLayout(self.settingsWidget)
 
     def _initPreviewArea(self):
         """初始化右侧预览区域"""
@@ -184,7 +186,8 @@ class SettingInterface(QWidget):
         self.settingsLayout.addWidget(self.modeGroup)
         self.settingsLayout.addWidget(self.globalGroup)
         self.settingsLayout.addWidget(self.logoGroup)
-        self.settingsLayout.addWidget(self.classicalLayout)
+        self.settingsLayout.addWidget(self.standardLayout)
+        self.settingsLayout.addWidget(self.simpleLayout)
         self.settingsLayout.addStretch(1)
 
         # 添加左右两侧到主布局
@@ -217,8 +220,9 @@ class SettingInterface(QWidget):
     def __setInitHiddens(self):
         self.logoGroup.set_sub_hiddens(self.modeValue.isSimple())
 
-        self.logoGroup.setHidden(self.modeValue.isSimple())
-        self.classicalLayout.setHidden(self.modeValue.isSimple())
+        self.standardLayout.setHidden(self.modeValue.isSimple())
+
+        self.simpleLayout.setHidden(not self.modeValue.isSimple())
 
     def __setValues(self):
         """设置初始值"""
@@ -371,7 +375,10 @@ class SettingInterface(QWidget):
 
         self.logoGroup.load_style(style_content)
 
-        self.classicalLayout.load_style(style_content)
+        self.standardLayout.load_style(style_content)
+
+        self.simpleLayout.load_style(style_content)
+
         self.__setSettings()
 
         cfg.set(cfg.styleName, style_name)
@@ -448,7 +455,9 @@ class SettingInterface(QWidget):
 
         self.logoGroup.save_style()
 
-        self.classicalLayout.save_style()
+        self.standardLayout.save_style()
+
+        self.simpleLayout.save_style()
 
         # # 生成样式内容并保存
         config_dict = cfg.to_dict()
@@ -460,7 +469,8 @@ class SettingInterface(QWidget):
     def resetStyle(self):
         self._initValues()
         self.__setSettings()
-        self.classicalLayout.reset_style()
+        self.standardLayout.reset_style()
+        self.simpleLayout.reset_style()
         self.logoGroup.reset_style()
         self.baseGroup.reset_style()
         self.globalGroup.reset_style()

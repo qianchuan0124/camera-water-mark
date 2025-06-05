@@ -2,7 +2,8 @@ from PyQt5.QtCore import QCoreApplication
 from qfluentwidgets import SettingCardGroup, FluentIcon as FIF
 from app.components.common_card import (
     ComboBoxSettingCard,
-    SwitchSettingCard
+    SwitchSettingCard,
+    SpinBoxSettingCard
 )
 from app.config import cfg
 from app.entity.enums import LOGO_LAYOUT
@@ -22,6 +23,7 @@ class LogoGroup(SettingCardGroup):
         # LOGO样式
         self.logoEnableValue = cfg.logoEnable.value
         self.logoLayoutValue = LOGO_LAYOUT.LEFT if cfg.isLogoLeft else LOGO_LAYOUT.RIGHT
+        self.logoSizeValue = int(cfg.simpleLogoSize.value * 100)
         self.customLogoEnableValue = cfg.customLogoEnable.value
         self.customLogoPathValue = cfg.customLogoPath.value
 
@@ -42,10 +44,19 @@ class LogoGroup(SettingCardGroup):
             texts=LOGO_LAYOUT.all_values(),
         )
 
+        self.logoSize = SpinBoxSettingCard(
+            FIF.FONT_SIZE,
+            self.tr("LOGO大小"),
+            self.tr("设置LOGO的大小比例"),
+            minimum=1,
+            maximum=100
+        )
+
         self.customLogo = CustomLogoPathCard(self)
 
         # LOGO样式
         self.addSettingCard(self.logoEnable)
+        self.addSettingCard(self.logoSize)
         self.addSettingCard(self.logoLayout)
         self.addSettingCard(self.customLogo)
 
@@ -53,6 +64,7 @@ class LogoGroup(SettingCardGroup):
         # LOGO样式
         self.logoEnable.setValue(self.logoEnableValue)
         self.logoLayout.comboBox.setCurrentText(self.logoLayoutValue.value)
+        self.logoSize.setValue(self.logoSizeValue)
         self.customLogo.setChecked(self.customLogoEnableValue)
         self.customLogo.setPath(self.customLogoPathValue)
 
@@ -62,6 +74,7 @@ class LogoGroup(SettingCardGroup):
         self.logoEnable.checkedChanged.connect(self.on_logo_enable_changed)
         self.logoLayout.currentTextChanged.connect(lambda text: setattr(
             self, "logoLayoutValue", LOGO_LAYOUT.get_enum(text)))
+        self.logoSize.valueChanged.connect(lambda text: setattr(self, "logoSizeValue", text))
         self.customLogo.checkedChanged.connect(lambda text: setattr(
             self, "customLogoEnableValue", text))
         self.customLogo.pathChanged.connect(
@@ -73,11 +86,8 @@ class LogoGroup(SettingCardGroup):
         self.customLogo.setHidden(not self.logoEnableValue)
 
     def set_sub_hiddens(self, isSimple):
-        self.logoEnable.setHidden(isSimple)
-        self.logoLayout.setHidden(
-            True if isSimple else not self.logoEnable)
-        self.customLogo.setHidden(
-            True if isSimple else not self.logoEnable)
+        self.logoSize.setHidden(not isSimple)
+        self.logoLayout.setHidden(isSimple)
 
     def reset_style(self):
         self.__init_values()
@@ -88,6 +98,7 @@ class LogoGroup(SettingCardGroup):
         self.logoEnableValue = style_content["LOGO"]["LogoEnable"]
         self.logoLayoutValue = LOGO_LAYOUT.LEFT if style_content[
             "LOGO"]["isLogoLeft"] else LOGO_LAYOUT.RIGHT
+        self.logoSizeValue = int(style_content["LOGO"].get("SimpleLogoSize", 0.5) * 100)
         self.customLogoEnableValue = style_content["LOGO"]["CustomLogoEnable"]
         self.customLogoPathValue = style_content["LOGO"]["CustomLogoPath"]
 
@@ -95,5 +106,6 @@ class LogoGroup(SettingCardGroup):
         # LOGO布局
         cfg.set(cfg.logoEnable, self.logoEnableValue)
         cfg.set(cfg.isLogoLeft, self.logoLayoutValue.isLeft())
+        cfg.set(cfg.simpleLogoSize, self.logoSizeValue / 100)
         cfg.set(cfg.customLogoEnable, self.customLogoEnableValue)
         cfg.set(cfg.customLogoPath, self.customLogoPathValue)

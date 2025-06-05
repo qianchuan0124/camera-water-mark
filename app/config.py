@@ -88,11 +88,17 @@ class Config(QConfig):
         "Global", "UseOriginRatioPadding", False)
     addShadow = ConfigItem("Global", "AddShadow", False)
     backgroundBlur = ConfigItem("Global", "BackgroundBlur", False)
+    blurExtent = ConfigItem("Global", "BlurExtent", 35)
+    blurHorizontalPadding = ConfigItem("Global", "BlurHorizontalPadding", 0.09)
+    blurTopPadding = ConfigItem("Global", "BlurTopPadding", 0.09)
+    blurBottomPadding = ConfigItem("Global", "BlurBottomPadding", 0.09)
+
     whiteMargin = ConfigItem("Global", "WhiteMargin", True)
     whiteMarginWidth = ConfigItem("Global", "WhiteMarginWidth", 3)
 
     logoEnable = ConfigItem("LOGO", "LogoEnable", True)
     isLogoLeft = ConfigItem("LOGO", "isLogoLeft", True)
+    simpleLogoSize = ConfigItem("LOGO", "SimpleLogoSize", 0.3)
     customLogoEnable = ConfigItem("LOGO", "CustomLogoEnable", False)
     customLogoPath = ConfigItem("LOGO", "CustomLogoPath", "")
 
@@ -113,6 +119,25 @@ class Config(QConfig):
     rightBottomBold = ConfigItem("Layout", "RightBottomBold", False)
     rightBottomFontColor = ConfigItem(
         "Layout", "RightBottomFontColor", "#757575")
+    
+    standardVerticalPadding = ConfigItem("Layout", "StandardTopPadding", 0.45)
+    standardLeftPadding = ConfigItem("Layout", "StandardLeftPadding", 200)
+    standardRightPadding = ConfigItem("Layout", "StandardRightPadding", 200)
+
+    simpleFirstLineType = ConfigItem("Layout", "SimpleFirstLineType", "Model")
+    simpleFirstLineBold = ConfigItem("Layout", "SimpleFirstLineBold", True)
+    simpleFirstLineColor = ConfigItem("Layout", "SimpleFirstLineColor", "#212121")
+
+    simpleSecondLineType = ConfigItem("Layout", "SimpleSecondLineType", "Param")
+    simpleSecondLineBold = ConfigItem("Layout", "SimpleSecondLineBold", False)
+    simpleSecondLineColor = ConfigItem("Layout", "SimpleSecondLineColor", "#757575")
+
+    simpleThirdLineType = ConfigItem("Layout", "SimpleThirdLineType", "Datetime")
+    simpleThirdLineBold = ConfigItem("Layout", "SimpleThirdLineBold", False)
+    simpleThirdLineColor = ConfigItem("Layout", "SimpleThirdLineColor", "#757575")
+
+    simpleScale = ConfigItem("Layout", "SimpleScale", 0.16)
+    simplePaddingScale = ConfigItem("Layout", "SimplePaddingScale", 0.1)
 
     def get_font_padding_level(self):
         bold_font_size = self.boldFontSize.value if 1 <= self.boldFontSize.value <= 3 else 1
