@@ -8,6 +8,7 @@ from app.components.common_card import (
 )
 from app.config import cfg
 from app.manager.font_manager import font_manager
+from app.utils.image_handle import qcolor_to_hex, hex_to_qcolor
 
 
 class BaseGroup(SettingCardGroup):
@@ -21,7 +22,7 @@ class BaseGroup(SettingCardGroup):
 
     def __init_values(self):
         # 基础样式
-        self.baseBackgroundValue = self.hex_to_qcolor(
+        self.baseBackgroundValue = hex_to_qcolor(
             cfg.backgroundColor.value)
         self.baseFontName = cfg.baseFontName.value
         self.boldFontName = cfg.boldFontName.value
@@ -139,7 +140,7 @@ class BaseGroup(SettingCardGroup):
     def load_style(self, style_content):
         # 基础样式
         self.baseBackgroundValue = QColor(
-            self.hex_to_qcolor(style_content["Base"]["BackgroundColor"]))
+            hex_to_qcolor(style_content["Base"]["BackgroundColor"]))
         self.baseFontName = style_content["Base"]["BaseFontName"]
         self.baseFontSizeValue = style_content["Base"]["BaseFontSize"]
         self.boldFontName = style_content["Base"]["BoldFontName"]
@@ -149,7 +150,7 @@ class BaseGroup(SettingCardGroup):
 
     def save_style(self):
         # 基础样式
-        cfg.set(cfg.backgroundColor, self.qcolor_to_hex(
+        cfg.set(cfg.backgroundColor, qcolor_to_hex(
             self.baseBackgroundValue))
         cfg.set(cfg.baseFontName, self.baseFontName)
         cfg.set(cfg.boldFontName, self.boldFontName)
@@ -158,37 +159,4 @@ class BaseGroup(SettingCardGroup):
         cfg.set(cfg.baseQuality, self.baseQualityValue)
         cfg.set(cfg.radiusInfo, self.radiusInfoValue)
 
-    def qcolor_to_hex(self, color: QColor) -> str:
-        # 获取红、绿、蓝、Alpha 分量（0-255）
-        red = color.red()
-        green = color.green()
-        blue = color.blue()
-        alpha = color.alpha()
-
-        # 转换为两位十六进制字符串（补零）
-        red_hex = f"{red:02X}"
-        green_hex = f"{green:02X}"
-        blue_hex = f"{blue:02X}"
-        alpha_hex = f"{alpha:02X}"
-
-        # 拼接为 #RRGGBBAA 格式
-        return f"#{red_hex}{green_hex}{blue_hex}{alpha_hex}"
-
-    def hex_to_qcolor(self, hex_color: str) -> QColor:
-        """将十六进制RGBA颜色字符串转换为QColor对象"""
-        if hex_color.startswith('#'):
-            hex_color = hex_color[1:]
-        if len(hex_color) == 8:  # 确保是8位十六进制颜色
-            r = int(hex_color[0:2], 16)
-            g = int(hex_color[2:4], 16)
-            b = int(hex_color[4:6], 16)
-            a = int(hex_color[6:8], 16)
-            return QColor(r, g, b, a)
-        elif len(hex_color) == 6:
-            r = int(hex_color[0:2], 16)
-            g = int(hex_color[2:4], 16)
-            b = int(hex_color[4:6], 16)
-            return QColor(r, g, b, 255)
-        else:
-            raise ValueError(
-                "Invalid hex color format. Expected #RRGGBBAA format.")
+    

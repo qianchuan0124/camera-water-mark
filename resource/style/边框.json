@@ -2,26 +2,26 @@
     "Global": {
         "AddShadow": false,
         "BackgroundBlur": false,
-        "BlurBottomPadding": 0.09,
+        "BlurBottomPadding": 0.01,
         "BlurExtent": 35,
         "BlurHorizontalPadding": 0.09,
         "BlurTopPadding": 0.09,
         "ShadowBlur": 20,
-        "ShadowColor": "#00000000",
-        "UseEquivalentFocal": true,
+        "ShadowColor": "#0000003F",
+        "UseEquivalentFocal": false,
         "UseOriginRatioPadding": false,
         "WhiteMargin": true,
-        "WhiteMarginColor": "#212121FF",
-        "WhiteMarginWidth": 3
+        "WhiteMarginColor": "#FFFFFFFF",
+        "WhiteMarginWidth": 1
     },
     "Base": {
-        "BackgroundColor": "#212121FF",
+        "BackgroundColor": "#FFFFFFFF",
         "BaseFontName": "AlibabaPuHuiTi-2-45-Light",
         "BaseFontSize": 1,
         "BaseQuality": 100,
-        "BoldFontName": "AlibabaPuHuiTi-2-45-Bold",
+        "BoldFontName": "AlibabaPuHuiTi-2-85-Bold",
         "BoldFontSize": 1,
-        "RadiusInfo": 20,
+        "RadiusInfo": 30,
         "TargetPath": ""
     },
     "LOGO": {
@@ -29,41 +29,41 @@
         "CustomLogoPath": "",
         "isLogoLeft": true,
         "LogoEnable": true,
-        "SimpleLogoSize": 0.5
+        "SimpleLogoSize": 0.3
     },
     "Layout": {
         "LeftBottomBold": false,
-        "LeftBottomFontColor": "#d32f2f",
+        "LeftBottomFontColor": "#e1e1e1",
         "LeftBottomType": "Model",
         "LeftTopBold": true,
-        "LeftTopFontColor": "#d4d1cc",
-        "LeftTopType": "LensModel",
+        "LeftTopFontColor": "#ebebeb",
+        "LeftTopType": "Make",
         "RightBottomBold": false,
-        "RightBottomFontColor": "#d32f2f",
+        "RightBottomFontColor": "#e1e1e1",
         "RightBottomType": "Param",
         "RightTopBold": true,
-        "RightTopFontColor": "#d4d1cc",
-        "RightTopType": "Datetime",
+        "RightTopFontColor": "#ebebeb",
+        "RightTopType": "LensMake_LensModel",
         "SimpleFirstLineBold": false,
         "SimpleFirstLineColor": "#212121",
-        "SimpleFirstLineType": "Model",
+        "SimpleFirstLineType": "LensModel",
         "SimplePaddingScale": 0.1,
-        "SimpleScale": 0.16,
+        "SimpleScale": 0.1,
         "SimpleSecondLineBold": false,
         "SimpleSecondLineColor": "#757575",
-        "SimpleSecondLineType": "Param",
+        "SimpleSecondLineType": "None",
         "SimpleThirdLineBold": false,
         "SimpleThirdLineColor": "#757575",
-        "SimpleThirdLineType": "Datetime",
-        "StandardLeftPadding": -200,
-        "StandardRightPadding": -200,
-        "StandardVerticalPadding": 0.3
+        "SimpleThirdLineType": "None",
+        "StandardLeftPadding": 800,
+        "StandardRightPadding": 800,
+        "StandardVerticalPadding": 0.5
     },
     "Mode": {
-        "MarkMode": "standard"
+        "MarkMode": "simple"
     },
     "Style": {
-        "StyleName": "\u6697\u9ed1"
+        "StyleName": "\u8fb9\u6846"
     },
     "QFluentWidgets": {
         "ThemeColor": "#ff009faa",

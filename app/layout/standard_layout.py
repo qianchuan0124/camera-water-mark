@@ -136,16 +136,16 @@ class StandardLayout(SettingCardGroup):
             FIF.UNIT,
             self.tr("左侧间距"),
             self.tr("左侧留白距离"),
-            minimum=0,
-            maximum=1000
+            minimum=-2000,
+            maximum=2000
         )
 
         self.rightPadding = SpinBoxSettingCard(
             FIF.UNIT,
             self.tr("右侧间距"),
             self.tr("右侧留白距离"),
-            minimum=0,
-            maximum=1000
+            minimum=-2000,
+            maximum=2000
         )
 
         self.addSettingCard(self.leftTopType)
@@ -287,28 +287,32 @@ class StandardLayout(SettingCardGroup):
             style_content["Layout"]["LeftTopType"])
         self.leftTopFontColorValue = QColor(
             style_content["Layout"]["LeftTopFontColor"])
+        self.leftTopColor.setColor(self.leftTopFontColorValue)
         self.leftTopBoldValue = style_content["Layout"]["LeftTopBold"]
 
         self.leftBottomTypeValue = DISPLAY_TYPE.from_str(
             style_content["Layout"]["LeftBottomType"])
         self.leftBottomFontColorValue = QColor(
             style_content["Layout"]["LeftBottomFontColor"])
+        self.leftBottomColor.setColor(self.leftBottomFontColorValue)
         self.leftBottomBoldValue = style_content["Layout"]["LeftBottomBold"]
 
         self.rightTopTypeValue = DISPLAY_TYPE.from_str(
             style_content["Layout"]["RightTopType"])
         self.rightTopFontColorValue = QColor(
             style_content["Layout"]["RightTopFontColor"])
+        self.rightTopColor.setColor(self.rightTopFontColorValue)
         self.rightTopBoldValue = style_content["Layout"]["RightTopBold"]
 
         self.rightBottomTypeValue = DISPLAY_TYPE.from_str(
             style_content["Layout"]["RightBottomType"])
         self.rightBottomFontColorValue = QColor(
             style_content["Layout"]["RightBottomFontColor"])
+        self.rightBottomColor.setColor(self.rightBottomFontColorValue)
         self.rightBottomBoldValue = style_content["Layout"]["RightBottomBold"]
 
         self.verticalPaddingValue = int(
-            style_content["Layout"].get("StandardVerticalPadding", 0.45) * 100)
+            style_content["Layout"].get("StandardVerticalPadding", 0.50) * 100)
         self.leftPaddingValue = style_content["Layout"].get(
             "StandardLeftPadding", 200)
         self.rightPaddingValue = style_content["Layout"].get(

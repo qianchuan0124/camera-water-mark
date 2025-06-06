@@ -47,15 +47,22 @@ class MainWindow(FluentWindow):
         
 
     def initWindow(self):
-        self.resize(1050, 600)
-        self.setMinimumWidth(700)
+        # 获取精确的屏幕尺寸和窗口尺寸
+        desktop = QApplication.desktop().availableGeometry()
+        screen_center = desktop.center()
+
+        self.resize(max(min(1050, desktop.width() - 400), 800), max(min(900, desktop.height() - 100), 500))
+        self.setMinimumWidth(800)
+        self.setMinimumHeight(500)
         self.setWindowIcon(QIcon(str(LOGO_PATH)))
         self.setWindowTitle("水印助手")
-
-        # 设置窗口位置, 居中
-        desktop = QApplication.desktop().availableGeometry()  # type: ignore
-        w, h = desktop.width(), desktop.height()
-        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+        
+        window_size = self.size()
+        
+        # 精确计算左上角坐标（中心点对齐）
+        x = screen_center.x() - window_size.width() // 2
+        y = screen_center.y() - window_size.height() // 2
+        self.move(x, y)
 
         self.show()
 

@@ -2,9 +2,11 @@ from PyQt5.QtCore import QCoreApplication
 from qfluentwidgets import SettingCardGroup, FluentIcon as FIF
 from app.components.common_card import (
     SwitchSettingCard,
-    SpinBoxSettingCard
+    SpinBoxSettingCard,
+    ColorSettingCard
 )
 from app.config import cfg
+from app.utils.image_handle import qcolor_to_hex, hex_to_qcolor
 
 
 class GlobalGroup(SettingCardGroup):
@@ -27,10 +29,13 @@ class GlobalGroup(SettingCardGroup):
         self.blurTopPaddingValue = int(cfg.blurTopPadding.value * 100)
         self.blurBottomPaddingValue = int(cfg.blurBottomPadding.value * 100)
 
-
         self.addShadowValue = cfg.addShadow.value
+        self.shadowBlurValue = cfg.shadowBlur.value
+        self.shadowColorValue = hex_to_qcolor(cfg.shadowColor.value)
+
         self.whiteMarginValue = cfg.whiteMargin.value
         self.whiteMarginWidthValue = cfg.whiteMarginWidth.value
+        self.whiteMarginColorValue = hex_to_qcolor(cfg.whiteMarginColor.value)
 
     def __setup_sub_layout(self):
         # 使用等效聚焦
@@ -101,22 +106,46 @@ class GlobalGroup(SettingCardGroup):
             self
         )
 
-        # 添加白色间距
+        self.shadowBlur = SpinBoxSettingCard(
+            FIF.LEAF,
+            self.tr("模糊程度"),
+            self.tr("阴影模糊程度, 数值越大模糊"),
+            minimum=0,
+            maximum=100
+        )
+
+        self.shadowColor = ColorSettingCard(
+            self.shadowColorValue,
+            FIF.LEAF,
+            self.tr("阴影颜色"),
+            self.tr("设置照片阴影颜色"),
+            enableAlpha=True
+        )
+
+        # 添加外部边框
         self.whiteMargin = SwitchSettingCard(
             FIF.COPY,
-            self.tr("白色间距"),
-            self.tr("是否添加白色间距"),
+            self.tr("外部边框"),
+            self.tr("是否添加外部边框"),
             None,
             self
         )
 
-        # 白色间距宽度
+        # 外部边框宽度
         self.whiteMarginWidth = SpinBoxSettingCard(
             FIF.COPY,
-            self.tr("白色间距宽度"),
-            self.tr("设置白色间距宽度"),
+            self.tr("边框宽度"),
+            self.tr("设置外部边框宽度"),
             minimum=0,
             maximum=10,
+        )
+
+        self.whiteMarginColor = ColorSettingCard(
+            self.whiteMarginColorValue,
+            FIF.COPY,
+            self.tr("边框颜色"),
+            self.tr("设置外部边框颜色"),
+            enableAlpha=True
         )
 
         # 全局样式
@@ -130,8 +159,12 @@ class GlobalGroup(SettingCardGroup):
         self.addSettingCard(self.blurBottomPadding)
 
         self.addSettingCard(self.addShadow)
+        self.addSettingCard(self.shadowBlur)
+        self.addSettingCard(self.shadowColor)
+
         self.addSettingCard(self.whiteMargin)
         self.addSettingCard(self.whiteMarginWidth)
+        self.addSettingCard(self.whiteMarginColor)
 
     def __set_settings(self):
         # 全局样式
@@ -145,13 +178,15 @@ class GlobalGroup(SettingCardGroup):
         self.blurBottomPadding.setValue(self.blurBottomPaddingValue)
 
         self.addShadow.setValue(self.addShadowValue)
+        self.shadowColor.setColor(self.shadowColorValue)
+        self.shadowBlur.setValue(self.shadowBlurValue)
+
         self.whiteMargin.setValue(self.whiteMarginValue)
         self.whiteMarginWidth.setValue(self.whiteMarginWidthValue)
+        self.whiteMarginColor.setColor(self.whiteMarginColorValue)
 
     def __connect_signals(self):
         # 全局样式
-        self.whiteMarginWidth.valueChanged.connect(
-            lambda text: setattr(self, "whiteMarginWidthValue", text))
         self.useEquivalentFocal.checkedChanged.connect(
             lambda text: setattr(self, "useEquivalentFocalValue", text))
         self.useOriginRatioPadding.checkedChanged.connect(
@@ -167,11 +202,17 @@ class GlobalGroup(SettingCardGroup):
         self.blurBottomPadding.valueChanged.connect(
             lambda text: setattr(self, "blurBottomPaddingValue", text)) 
 
-        self.addShadow.checkedChanged.connect(
-            lambda text: setattr(self, "addShadowValue", text))
-        self.whiteMargin.checkedChanged.connect(
-            lambda text: setattr(self, "whiteMarginValue", text))
+        self.addShadow.checkedChanged.connect(self.__on_add_shadow_changed)
+        self.shadowColor.colorChanged.connect(
+            lambda text: setattr(self, "shadowColorValue", text))
+        self.shadowBlur.valueChanged.connect(
+            lambda text: setattr(self, "shadowBlurValue", text))
+
         
+        self.whiteMargin.checkedChanged.connect(self.__on_white_margin_changed)
+        self.whiteMarginWidth.valueChanged.connect(lambda text: setattr(self, "whiteMarginWidthValue", text))
+        self.whiteMarginColor.colorChanged.connect(
+            lambda text: setattr(self, "whiteMarginColorValue", text))
 
     def __on_backgound_blur_changed(self, value):
         """处理背景模糊开关变化的逻辑"""
@@ -180,6 +221,18 @@ class GlobalGroup(SettingCardGroup):
         self.blurHorizontalPadding.setHidden(not value)
         self.blurTopPadding.setHidden(not value)
         self.blurBottomPadding.setHidden(not value)
+
+    def __on_add_shadow_changed(self, value):
+        """处理添加阴影开关变化的逻辑"""
+        self.addShadowValue = value
+        self.shadowBlur.setHidden(not value)
+        self.shadowColor.setHidden(not value)
+
+    def __on_white_margin_changed(self, value):
+        """处理添加外部边框开关变化的逻辑"""
+        self.whiteMarginValue = value
+        self.whiteMarginWidth.setHidden(not value)
+        self.whiteMarginColor.setHidden(not value)
 
     def reset_style(self):
         self.__init_values()
@@ -190,17 +243,29 @@ class GlobalGroup(SettingCardGroup):
         self.useEquivalentFocalValue = style_content["Global"]["UseEquivalentFocal"]
         self.useOriginRatioPaddingValue = style_content["Global"]["UseOriginRatioPadding"]
 
-        self.backgroundBlurValue = style_content["Global"]["BackgroundBlur"]
+        self.backgroundBlurValue = style_content["Global"].get("BackgroundBlur", False)
         self.blurExtentValue = int(style_content["Global"].get("BlurExtent", 35))
         self.blurHorizontalPaddingValue = int(style_content["Global"].get("BlurHorizontalPadding", 0.09) * 100)
         self.blurTopPaddingValue = int(style_content["Global"].get("BlurTopPadding", 0.09) * 100)
         self.blurBottomPaddingValue = int(style_content["Global"].get("BlurBottomPadding", 0.09) * 100)
+        self.backgroundBlur.setChecked(self.backgroundBlurValue)
         self.__on_backgound_blur_changed(self.backgroundBlurValue)
 
-        self.addShadowValue = style_content["Global"]["AddShadow"]
+        self.addShadowValue = style_content["Global"].get("AddShadow", False)
+        self.shadowColorValue = hex_to_qcolor(
+            style_content["Global"].get("ShadowColor", "#00000000"))
+        self.shadowBlurValue = int(style_content["Global"].get("ShadowBlur", 20))
+        print(f"get shadow color: {self.shadowColorValue}")
+        self.addShadow.setChecked(self.addShadowValue)
+        self.__on_add_shadow_changed(self.addShadowValue)
+
         self.whiteMarginValue = style_content["Global"]["WhiteMargin"]
         self.whiteMarginWidthValue = int(
             style_content["Global"]["WhiteMarginWidth"])
+        self.whiteMarginColorValue = hex_to_qcolor(
+            style_content["Global"].get("WhiteMarginColor", "#ffffff"))
+        self.whiteMargin.setChecked(self.whiteMarginValue)
+        self.__on_white_margin_changed(self.whiteMarginValue)
 
     def save_style(self):
         # 全局样式
@@ -214,5 +279,9 @@ class GlobalGroup(SettingCardGroup):
         cfg.set(cfg.blurBottomPadding, float(self.blurBottomPaddingValue / 100))
 
         cfg.set(cfg.addShadow, self.addShadowValue)
+        cfg.set(cfg.shadowColor, qcolor_to_hex(self.shadowColorValue))
+        cfg.set(cfg.shadowBlur, self.shadowBlurValue)
+
         cfg.set(cfg.whiteMargin, self.whiteMarginValue)
         cfg.set(cfg.whiteMarginWidth, self.whiteMarginWidthValue)
+        cfg.set(cfg.whiteMarginColor, qcolor_to_hex(self.whiteMarginColorValue))

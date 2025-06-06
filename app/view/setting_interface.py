@@ -93,7 +93,14 @@ class SettingInterface(QWidget):
 
     def _initPreviewArea(self):
         """初始化右侧预览区域"""
+        self.previewScrollArea = ScrollArea()
+        self.previewScrollArea.setWidgetResizable(True)
+        self.previewScrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.previewScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
         self.previewCard = CardWidget()
+        self.previewScrollArea.setWidget(self.previewCard)
+
         self.previewLayout = QVBoxLayout(self.previewCard)
         self.previewLayout.setSpacing(16)
 
@@ -192,14 +199,16 @@ class SettingInterface(QWidget):
 
         # 添加左右两侧到主布局
         self.hBoxLayout.addWidget(self.settingsScrollArea)
-        self.hBoxLayout.addWidget(self.previewCard)
+        self.hBoxLayout.addWidget(self.previewScrollArea)
 
     def _initStyle(self):
         """初始化样式"""
         self.settingsWidget.setObjectName("settingsWidget")
+        self.previewTopWidget.setObjectName("previewTopWidget")
+        self.previewCard.setObjectName("previewCard")
         self.setStyleSheet(
             """
-            SubtitleStyleInterface, #settingsWidget {
+            #settingsWidget, #previewTopWidget, #previewCard {
                 background-color: transparent;
             }
             QScrollArea {

@@ -87,6 +87,8 @@ class Config(QConfig):
     useOriginRatioPadding = ConfigItem(
         "Global", "UseOriginRatioPadding", False)
     addShadow = ConfigItem("Global", "AddShadow", False)
+    shadowColor = ConfigItem("Global", "ShadowColor", "#00000000")
+    shadowBlur = ConfigItem("Global", "ShadowBlur", 20)
     backgroundBlur = ConfigItem("Global", "BackgroundBlur", False)
     blurExtent = ConfigItem("Global", "BlurExtent", 35)
     blurHorizontalPadding = ConfigItem("Global", "BlurHorizontalPadding", 0.09)
@@ -95,6 +97,7 @@ class Config(QConfig):
 
     whiteMargin = ConfigItem("Global", "WhiteMargin", True)
     whiteMarginWidth = ConfigItem("Global", "WhiteMarginWidth", 3)
+    whiteMarginColor = ConfigItem("Global", "WhiteMarginColor", "#ffffff")
 
     logoEnable = ConfigItem("LOGO", "LogoEnable", True)
     isLogoLeft = ConfigItem("LOGO", "isLogoLeft", True)
@@ -120,7 +123,7 @@ class Config(QConfig):
     rightBottomFontColor = ConfigItem(
         "Layout", "RightBottomFontColor", "#757575")
     
-    standardVerticalPadding = ConfigItem("Layout", "StandardTopPadding", 0.45)
+    standardVerticalPadding = ConfigItem("Layout", "StandardVerticalPadding", 0.50)
     standardLeftPadding = ConfigItem("Layout", "StandardLeftPadding", 200)
     standardRightPadding = ConfigItem("Layout", "StandardRightPadding", 200)
 

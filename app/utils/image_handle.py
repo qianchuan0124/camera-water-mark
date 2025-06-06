@@ -6,6 +6,7 @@ import os
 import re
 
 from app.utils.logger import setup_logger
+from PyQt5.QtGui import QColor
 from app.config import EXIFTOOL_PATH
 from datetime import datetime
 from pathlib import Path
@@ -263,13 +264,14 @@ def calculate_pixel_count(width: int, height: int) -> str:
     return f"{megapixel_count:.2f} MP"
 
 
-def append_image_by_side(background, images, side='left', padding=200, is_start=False):
+def append_image_by_side(background, images, side='left', padding=200, inner_padding=200, is_start=False):
     """
     将图片横向拼接到背景图片中
     :param background: 背景图片对象
     :param images: 图片对象列表
     :param side: 拼接方向，left/right
-    :param padding: 图片之间的间距
+    :param padding: 边缘间距, is_start为True才生效
+    :param inner_padding: 图片之间的间距    
     :param is_start: 是否在最左侧添加 padding
     :return: 拼接后的图片对象
     """
@@ -285,7 +287,7 @@ def append_image_by_side(background, images, side='left', padding=200, is_start=
             i = resize_image_with_height(
                 i, background.height, auto_close=False)
             x_offset -= i.width
-            x_offset -= padding
+            x_offset -= inner_padding
             background.paste(i, (x_offset, 0))
     else:
         if is_start:
@@ -299,7 +301,7 @@ def append_image_by_side(background, images, side='left', padding=200, is_start=
                 i, background.height, auto_close=False)
             background.paste(i, (x_offset, 0))
             x_offset += i.width
-            x_offset += padding
+            x_offset += inner_padding
 
 
 def resize_image_with_height(image, height, auto_close=True):
@@ -462,6 +464,9 @@ def resize_image_with_width(image, width, auto_close=True):
     # 返回缩放后的图片对象
     return resized_image
 
+def resize_height_with_size(width: float, height: float, target_width: float):
+    scale = target_width / width
+    return round(height * scale)
 
 def square_image(image, auto_close=True) -> Image.Image:
     """
@@ -543,3 +548,38 @@ def hex_to_rgba(hex_color, alpha=255):
         raise ValueError("无效的十六进制颜色字符串。长度应为 6 或 8 个字符。")
 
     return (r, g, b, a)
+
+def qcolor_to_hex(color: QColor) -> str:
+        # 获取红、绿、蓝、Alpha 分量（0-255）
+        red = color.red()
+        green = color.green()
+        blue = color.blue()
+        alpha = color.alpha()
+
+        # 转换为两位十六进制字符串（补零）
+        red_hex = f"{red:02X}"
+        green_hex = f"{green:02X}"
+        blue_hex = f"{blue:02X}"
+        alpha_hex = f"{alpha:02X}"
+
+        # 拼接为 #RRGGBBAA 格式
+        return f"#{red_hex}{green_hex}{blue_hex}{alpha_hex}"
+
+def hex_to_qcolor(hex_color: str) -> QColor:
+    """将十六进制RGBA颜色字符串转换为QColor对象"""
+    if hex_color.startswith('#'):
+        hex_color = hex_color[1:]
+    if len(hex_color) == 8:  # 确保是8位十六进制颜色
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        a = int(hex_color[6:8], 16)
+        return QColor(r, g, b, a)
+    elif len(hex_color) == 6:
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        return QColor(r, g, b, 255)
+    else:
+        raise ValueError(
+            "Invalid hex color format. Expected #RRGGBBAA format.")

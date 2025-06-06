@@ -86,8 +86,12 @@ class LogoGroup(SettingCardGroup):
         self.customLogo.setHidden(not self.logoEnableValue)
 
     def set_sub_hiddens(self, isSimple):
+      if self.logoEnableValue:
         self.logoSize.setHidden(not isSimple)
         self.logoLayout.setHidden(isSimple)
+      else:
+        self.logoSize.setHidden(True)
+        self.logoLayout.setHidden(True)
 
     def reset_style(self):
         self.__init_values()
@@ -99,8 +103,10 @@ class LogoGroup(SettingCardGroup):
         self.logoLayoutValue = LOGO_LAYOUT.LEFT if style_content[
             "LOGO"]["isLogoLeft"] else LOGO_LAYOUT.RIGHT
         self.logoSizeValue = int(style_content["LOGO"].get("SimpleLogoSize", 0.5) * 100)
-        self.customLogoEnableValue = style_content["LOGO"]["CustomLogoEnable"]
-        self.customLogoPathValue = style_content["LOGO"]["CustomLogoPath"]
+        self.customLogoEnableValue = style_content["LOGO"].get("CustomLogoEnable", False)
+        self.customLogoPathValue = style_content["LOGO"].get("CustomLogoPath", "")
+
+        self.on_logo_enable_changed(self.logoEnableValue)
 
     def save_style(self):
         # LOGO布局
