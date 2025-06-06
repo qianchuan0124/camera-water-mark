@@ -3,6 +3,11 @@ if IS_INNER:
     CHECK_VERSION_URL = "https://gitee.com/api/v5/repos/qian_chuan/camera-water-mark/releases/latest"
 else:
     CHECK_VERSION_URL = "https://api.github.com/repos/qianchuan0124/camera-water-mark/releases/latest"
+
+if IS_INNER:
+    NO_PERMISSION_URL = "https://gitee.com/qian_chuan/camera-water-mark#windows11%E6%97%A0%E6%B3%95%E6%89%93%E5%BC%80"
+else:
+    NO_PERMISSION_URL = "https://github.com/qianchuan0124/camera-water-mark/tree/main?tab=readme-ov-file#windows11%E6%97%A0%E6%B3%95%E6%89%93%E5%BC%80"
 CURRENT_VERSION = "v0.0.4"
 
 

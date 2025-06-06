@@ -287,14 +287,12 @@ class StandardLayout(SettingCardGroup):
             style_content["Layout"]["LeftTopType"])
         self.leftTopFontColorValue = QColor(
             style_content["Layout"]["LeftTopFontColor"])
-        self.leftTopColor.setColor(self.leftTopFontColorValue)
         self.leftTopBoldValue = style_content["Layout"]["LeftTopBold"]
 
         self.leftBottomTypeValue = DISPLAY_TYPE.from_str(
             style_content["Layout"]["LeftBottomType"])
         self.leftBottomFontColorValue = QColor(
             style_content["Layout"]["LeftBottomFontColor"])
-        self.leftBottomColor.setColor(self.leftBottomFontColorValue)
         self.leftBottomBoldValue = style_content["Layout"]["LeftBottomBold"]
 
         self.rightTopTypeValue = DISPLAY_TYPE.from_str(
@@ -308,7 +306,6 @@ class StandardLayout(SettingCardGroup):
             style_content["Layout"]["RightBottomType"])
         self.rightBottomFontColorValue = QColor(
             style_content["Layout"]["RightBottomFontColor"])
-        self.rightBottomColor.setColor(self.rightBottomFontColorValue)
         self.rightBottomBoldValue = style_content["Layout"]["RightBottomBold"]
 
         self.verticalPaddingValue = int(
@@ -317,6 +314,8 @@ class StandardLayout(SettingCardGroup):
             "StandardLeftPadding", 200)
         self.rightPaddingValue = style_content["Layout"].get(
             "StandardRightPadding", 200)
+        
+        self.__set_settings()
 
     def save_style(self):
         # 布局样式

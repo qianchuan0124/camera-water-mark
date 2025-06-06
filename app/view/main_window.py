@@ -1,4 +1,5 @@
 import sys
+import webbrowser
 from pathlib import Path
 from qfluentwidgets import (FluentWindow)
 from qfluentwidgets import setTheme, Theme, NavigationItemPosition, MessageBox
@@ -7,6 +8,7 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QCoreApplication
 from app.config import ASSETS_PATH, ROOT_PATH
+from app.entity.constants import NO_PERMISSION_URL
 
 LOGO_PATH = f"{ASSETS_PATH}/logo.png"
 
@@ -40,9 +42,12 @@ class MainWindow(FluentWindow):
                 QCoreApplication.translate("MainWindow", "请检查文件夹权限或以管理员身份运行程序。"), 
                 self.window()
             )
-            w.yesButton.setText(QCoreApplication.translate("MainWindow", "确认"))
-            w.cancelButton.setHidden(True)
+            w.yesButton.setText(QCoreApplication.translate("MainWindow", "尝试修复"))
+            w.cancelButton.setText(QCoreApplication.translate("MainWindow", "退出"))
             if w.exec():
+                webbrowser.open(NO_PERMISSION_URL)
+                sys.exit()
+            else:
                 sys.exit()
         
 

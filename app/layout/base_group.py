@@ -147,6 +147,7 @@ class BaseGroup(SettingCardGroup):
         self.boldFontSizeValue = style_content["Base"]["BoldFontSize"]
         self.baseQualityValue = int(style_content["Base"]["BaseQuality"])
         self.radiusInfoValue = int(style_content["Base"]["RadiusInfo"])
+        self.__set_settings()
 
     def save_style(self):
         # 基础样式

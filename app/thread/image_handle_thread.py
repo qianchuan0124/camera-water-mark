@@ -133,7 +133,11 @@ class ImageHandleThread(QThread):
         for index, task in enumerate(self.tasks):
             try:
                 self.image = Image.open(task.image_path)
-                self.image = add_rounded_corners(self.image)
+                if cfg.backgroundBlur.value:
+                    bgColor = TRANSPARENT
+                else:
+                    bgColor = cfg.backgroundColor.value
+                self.image = add_rounded_corners(self.image, bgColor)
                 self.watermark_img = self.image.copy()
                 image_info = ImageInfo(task.image_path)
                 self.fix_orientation(image_info)

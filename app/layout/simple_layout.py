@@ -220,6 +220,8 @@ class SimpleLayout(SettingCardGroup):
         self.simpleScaleValue = int(style_content["Layout"].get("SimpleScale", 0.16) * 100)
         self.simplePaddingScaleValue = int(style_content["Layout"].get("SimplePaddingScale", 0.1) * 100)
 
+        self.__set_settings()
+
     def save_style(self):
         """保存样式内容"""
         cfg.set(cfg.simpleFirstLineType, self.firstLineTypeValue.value)

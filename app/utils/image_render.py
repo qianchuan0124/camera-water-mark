@@ -109,7 +109,7 @@ def add_shadow(img: Image.Image) -> Image.Image:
         raise CustomError("增加阴影出错", 402)
 
 
-def add_rounded_corners(img: Image.Image) -> Image.Image:
+def add_rounded_corners(img: Image.Image, backgroundColor=(0,0,0,0)) -> Image.Image:
     """给图片添加透明背景的圆角效果
     参数:
         img: 输入图片(支持任意格式)
@@ -121,7 +121,7 @@ def add_rounded_corners(img: Image.Image) -> Image.Image:
         radius = min(img.width, img.height) // raduis()
         
         # 创建透明背景层
-        background = Image.new("RGBA", img.size, cfg.backgroundColor.value)
+        background = Image.new("RGBA", img.size, backgroundColor)
         
         # 创建圆角蒙版
         mask = Image.new("L", img.size, 0)
