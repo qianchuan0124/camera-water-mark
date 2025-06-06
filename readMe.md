@@ -113,15 +113,23 @@
 
 老版本会直接提示异常，新版本会显示没有读写权限:
 
-<img src="./doc/images/question-1.png" alt="image-20250329143208299" style="zoom:40%;" /><img src="./doc/images/question-2.png" alt="image-20250329143208299" style="zoom:100%;" />
+<img src="./doc/images/question-1.png" alt="image-20250329143208299" style="zoom:100%;" />
 
-解决方法:
+<img src="./doc/images/question-2.png" alt="image-20250329143208299" style="zoom:120%;" />
+
+有三种解决方法:
 
 1. 右键，以管理员身份运行程序即可，但是每次都要右键运行，比较麻烦。
 2. 重新安装，不要安装在C盘而是在其他权限要求较低的地方，能一次性解决，但是需要重新安装。
 3. 授予权限，步骤较为繁琐，但是可以不需要重新安装且能一次性解决，步骤如下:
 
-<img src="./doc/images/question-3.png" alt="image-20250329143208299" style="zoom:50%;" /><img src="./doc/images/question-4.png" alt="image-20250329143208299" style="zoom:45%;" /><img src="./doc/images/question-5.png" alt="image-20250329143208299" style="zoom:45%;" /><img src="./doc/images/question-6.png" alt="image-20250329143208299" style="zoom:45%;" />
+<img src="./doc/images/question-3.png" alt="image-20250329143208299" style="zoom:100%;" />
+
+<img src="./doc/images/question-4.png" alt="image-20250329143208299" style="zoom:70%;" />
+
+<img src="./doc/images/question-5.png" alt="image-20250329143208299" style="zoom:100%;" />
+
+<img src="./doc/images/question-6.png" alt="image-20250329143208299" style="zoom:100%;" />
 
 ## 💖 感谢致敬
 
