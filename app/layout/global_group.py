@@ -255,7 +255,6 @@ class GlobalGroup(SettingCardGroup):
         self.shadowColorValue = hex_to_qcolor(
             style_content["Global"].get("ShadowColor", "#00000000"))
         self.shadowBlurValue = int(style_content["Global"].get("ShadowBlur", 20))
-        print(f"get shadow color: {self.shadowColorValue}")
         self.addShadow.setChecked(self.addShadowValue)
         self.__on_add_shadow_changed(self.addShadowValue)
 

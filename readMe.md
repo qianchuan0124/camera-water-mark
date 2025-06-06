@@ -87,7 +87,21 @@
 2. 添加海拔信息展示
 3. 添加自定义Logo的功能
 
+### 2025.6.6 —— v0.0.4更新
 
+1. 新增简约、经典、边框三种可选样式
+2. 简易模式支持自定义展示内容
+3. 标准模式新增不展示样式，支持调整左右间距与纵向比例
+4. 全局背景色可设置不透明度，支持将水印设置在背景图之上
+5. 没有权限时增加相关提示，增加引导入口
+6. 修复窗口位置与大小导致的展示问题
+7. 修复阴影、边框等展示样式问题
+
+<img src="./doc/images/image_20250606_221218.png" alt="image-20250329143208299" style="zoom:80%;" />
+
+<img src="./doc/images/image_20250606_221233.png" alt="image-20250329143208299" style="zoom:80%;" />
+
+<img src="./doc/images/image_20250606_221450.png" alt="image-20250329143208299" style="zoom:80%;" />
 
 ## ⁉️问题解决
 
@@ -95,7 +109,19 @@
 
 检查电脑上是否安装[exiftool](https://exiftool.org/)工具，安装包内自带，但是直接跑源码需要进行安装。
 
+### Windows11无法打开
 
+老版本会直接提示异常，新版本会显示没有读写权限:
+
+<img src="./doc/images/question-1.png" alt="image-20250329143208299" style="zoom:40%;" /><img src="./doc/images/question-2.png" alt="image-20250329143208299" style="zoom:100%;" />
+
+解决方法:
+
+1. 右键，以管理员身份运行程序即可，但是每次都要右键运行，比较麻烦。
+2. 重新安装，不要安装在C盘而是在其他权限要求较低的地方，能一次性解决，但是需要重新安装。
+3. 授予权限，步骤较为繁琐，但是可以不需要重新安装且能一次性解决，步骤如下:
+
+<img src="./doc/images/question-3.png" alt="image-20250329143208299" style="zoom:50%;" /><img src="./doc/images/question-4.png" alt="image-20250329143208299" style="zoom:45%;" /><img src="./doc/images/question-5.png" alt="image-20250329143208299" style="zoom:45%;" /><img src="./doc/images/question-6.png" alt="image-20250329143208299" style="zoom:45%;" />
 
 ## 💖 感谢致敬
 
