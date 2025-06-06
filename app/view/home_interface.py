@@ -215,6 +215,7 @@ class HomeInterface(QWidget):
 
         if folder_path:
             self.search_input.setText(folder_path)
+            cfg.set(cfg.targetPath, folder_path)
 
     def on_add_button_clicked(self):
         desktop_path = QStandardPaths.writableLocation(

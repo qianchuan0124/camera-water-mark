@@ -429,8 +429,8 @@ class ImageHandleThread(QThread):
         else:
             pass
 
-        # if self.watermark_img.mode != 'RGB':
-        #     self.watermark_img = self.watermark_img.convert('RGB')
+        if self.watermark_img.mode != 'RGB':
+            self.watermark_img = self.watermark_img.convert('RGB')
 
         if 'exif' in self.image.info:
             self.watermark_img.save(target_path, quality=quality, encoding='utf-8',

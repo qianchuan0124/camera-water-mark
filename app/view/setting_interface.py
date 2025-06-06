@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 import json
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PyQt5.QtCore import Qt, QStandardPaths
+from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget, QFileDialog
 from qfluentwidgets import (
     ImageLabel,
     InfoBar,
@@ -130,6 +130,13 @@ class SettingInterface(QWidget):
             self.tr("基于当前样式新建预设"),
         )
 
+        self.previewPath = PushSettingCard(
+            self.tr("更新预览图"),
+            FIF.ALBUM,
+            self.tr("预览图路径"),
+            cfg.get(cfg.previewPath),
+        )
+
         self.openStyleFolderButton = PushSettingCard(
             self.tr("打开样式文件夹"),
             FIF.FOLDER,
@@ -139,6 +146,7 @@ class SettingInterface(QWidget):
 
         self.previewBottomLayout.addWidget(self.styleNameComboBox)
         self.previewBottomLayout.addWidget(self.newStyleButton)
+        self.previewBottomLayout.addWidget(self.previewPath)
         self.previewBottomLayout.addWidget(self.openStyleFolderButton)
 
         self.previewSettingWidget = QWidget()
@@ -264,6 +272,7 @@ class SettingInterface(QWidget):
     def connectSignals(self):
         """连接所有设置变更的信号到预览更新函数"""
         # 监听UI上的改变，绑定到样式数据上
+        self.previewPath.clicked.connect(self.__on_preview_path_clicked)
 
         # 模式
         self.markMode.currentTextChanged.connect(self.on_mark_mode_change)
@@ -299,6 +308,30 @@ class SettingInterface(QWidget):
         else:  # Linux
             subprocess.run(["xdg-open", STYLE_PATH])
 
+    def __on_preview_path_clicked(self):
+        current_path = Path(cfg.previewPath.value)
+        if os.path.exists(current_path):
+            desktop_path = os.path.dirname(current_path)
+        else:
+            desktop_path = QStandardPaths.writableLocation(
+                QStandardPaths.DesktopLocation
+            )
+
+        # 创建文件对话框并设置过滤器
+        file_path, _ = QFileDialog.getOpenFileName(
+            parent=self,
+            caption=self.tr("选择预览原图"),
+            directory=desktop_path,
+            filter=self.tr("图片 (*.jpg *.png *.jpeg);;所有文件 (*)")
+        )
+
+        # 如果用户选择了文件（未点击取消）
+        if file_path:
+            cfg.set(cfg.previewPath, file_path)
+            self.previewPath.setContent(file_path)
+            self.updatePreview()
+            
+
     def updatePreview(self):
         # 创建预览线程
         self.renderButton.start_loading()
@@ -306,8 +339,14 @@ class SettingInterface(QWidget):
         if not os.path.exists(CACHE_PATH):
             os.makedirs(CACHE_PATH)
 
+        preview_path = Path(cfg.previewPath.value)
+        if not preview_path or not os.path.exists(preview_path):
+            preview_path = Path(DEFAULT_BG["path"])
+            cfg.set(cfg.previewPath, str(preview_path))
+            self.previewPath.setContent(str(preview_path))
+
         self.preview_task = ImageHandleTask(
-            Path(DEFAULT_BG["path"]), cache_preview)
+            preview_path, cache_preview)
         self.preview_thread = ImageHandleThread([self.preview_task])
         self.preview_thread.finished.connect(self.onPreviewReady)
         self.refreshButtons(False)

@@ -80,6 +80,7 @@ class Config(QConfig):
     radiusInfo = ConfigItem("Base", "RadiusInfo", 20)
     backgroundColor = ConfigItem("Base", "BackgroundColor", "#ffffffff")
     targetPath = ConfigItem("Base", "TargetPath", str(OUTPUT_PATH))
+    previewPath = ConfigItem("Base", "PreviewPath", f"{ASSETS_PATH}/default_bg.jpg")
 
     markMode = ConfigItem("Mode", "MarkMode", "standard")
 
