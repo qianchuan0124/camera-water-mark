@@ -93,20 +93,13 @@ class SettingInterface(QWidget):
 
     def _initPreviewArea(self):
         """初始化右侧预览区域"""
-        self.previewScrollArea = ScrollArea()
-        self.previewScrollArea.setWidgetResizable(True)
-        self.previewScrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.previewScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
         self.previewCard = CardWidget()
-        self.previewScrollArea.setWidget(self.previewCard)
-
         self.previewLayout = QVBoxLayout(self.previewCard)
         self.previewLayout.setSpacing(16)
 
         # 顶部预览区域
         self.previewTopWidget = QWidget()
-        self.previewTopWidget.setFixedHeight(430)
+        self.previewTopWidget.setFixedHeight(400)
         self.previewTopLayout = QVBoxLayout(self.previewTopWidget)
 
         self.previewLabel = BodyLabel(self.tr("预览效果"))
@@ -116,8 +109,23 @@ class SettingInterface(QWidget):
         self.previewTopLayout.setAlignment(Qt.AlignVCenter)
 
         # 底部控件区域
+        self.scrollArea = ScrollArea()
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        # 滚动区域的内容容器
+        self.scrollContent = QWidget()
+        self.scrollContentLayout = QVBoxLayout(self.scrollContent)
+        self.scrollContentLayout.setContentsMargins(0, 0, 0, 0)
+
+        self.scrollContentLayout.setSpacing(2)
+
         self.previewBottomWidget = QWidget()
         self.previewBottomLayout = QVBoxLayout(self.previewBottomWidget)
+
+        self.previewBottomLayout.setContentsMargins(5, 5, 5, 5) 
+        self.previewBottomLayout.setSpacing(3)
 
         self.styleNameComboBox = ComboBoxSettingCard(
             FIF.VIEW, self.tr("选择样式"), self.tr("选择已保存的字幕样式"), texts=[]
@@ -134,7 +142,7 @@ class SettingInterface(QWidget):
             self.tr("更新预览图"),
             FIF.ALBUM,
             self.tr("预览图路径"),
-            cfg.get(cfg.previewPath),
+            self.display_render_path(cfg.get(cfg.previewPath))
         )
 
         self.openStyleFolderButton = PushSettingCard(
@@ -151,6 +159,8 @@ class SettingInterface(QWidget):
 
         self.previewSettingWidget = QWidget()
         self.previewSettingLayout = QHBoxLayout(self.previewSettingWidget)
+
+        self.previewSettingLayout.setContentsMargins(5, 5, 5, 5) 
 
         self.saveButton = PrimaryPushButton(self.tr("保存"), self, icon=FIF.SAVE)
         self.saveButton.clicked.connect(self.on_save_button_tapped)
@@ -173,10 +183,15 @@ class SettingInterface(QWidget):
         self.previewSettingLayout.addWidget(self.resetButton)
         self.previewSettingLayout.addWidget(self.renderButton)
 
+        # 将底部控件和设置按钮添加到滚动内容布局
+        self.scrollContentLayout.addStretch(1)
+        self.scrollContentLayout.addWidget(self.previewBottomWidget)
+        self.scrollContentLayout.addWidget(self.previewSettingWidget)
+
+        self.scrollArea.setWidget(self.scrollContent)
+
         self.previewLayout.addWidget(self.previewTopWidget)
-        self.previewLayout.addWidget(self.previewBottomWidget)
-        self.previewLayout.addWidget(self.previewSettingWidget)
-        self.previewLayout.addStretch(1)
+        self.previewLayout.addWidget(self.scrollArea)
 
     def _initSettingCards(self):
         """初始化所有设置卡片"""
@@ -207,16 +222,17 @@ class SettingInterface(QWidget):
 
         # 添加左右两侧到主布局
         self.hBoxLayout.addWidget(self.settingsScrollArea)
-        self.hBoxLayout.addWidget(self.previewScrollArea)
+        self.hBoxLayout.addWidget(self.previewCard)
 
     def _initStyle(self):
         """初始化样式"""
         self.settingsWidget.setObjectName("settingsWidget")
         self.previewTopWidget.setObjectName("previewTopWidget")
         self.previewCard.setObjectName("previewCard")
+        self.scrollContent.setObjectName("scrollContent")
         self.setStyleSheet(
             """
-            #settingsWidget, #previewTopWidget, #previewCard {
+            #settingsWidget, #previewTopWidget, #previewCard, #scrollContent {
                 background-color: transparent;
             }
             QScrollArea {
@@ -309,7 +325,7 @@ class SettingInterface(QWidget):
             subprocess.run(["xdg-open", STYLE_PATH])
 
     def __on_preview_path_clicked(self):
-        current_path = Path(cfg.previewPath.value)
+        current_path = DEFAULT_BG["path"]
         if os.path.exists(current_path):
             desktop_path = os.path.dirname(current_path)
         else:
@@ -328,7 +344,7 @@ class SettingInterface(QWidget):
         # 如果用户选择了文件（未点击取消）
         if file_path:
             cfg.set(cfg.previewPath, file_path)
-            self.previewPath.setContent(file_path)
+            self.previewPath.setContent(self.display_render_path(str(file_path)))
             self.updatePreview()
             
 
@@ -343,7 +359,7 @@ class SettingInterface(QWidget):
         if not preview_path or not os.path.exists(preview_path):
             preview_path = Path(DEFAULT_BG["path"])
             cfg.set(cfg.previewPath, str(preview_path))
-            self.previewPath.setContent(str(preview_path))
+            self.previewPath.setContent(self.display_render_path(str(preview_path)))
 
         self.preview_task = ImageHandleTask(
             preview_path, cache_preview)
@@ -527,6 +543,11 @@ class SettingInterface(QWidget):
         if not self.renderButton.is_loading:
             self.renderButton.start_loading()
             self.updatePreview()
+
+    def display_render_path(self, path):
+      if len(path) > 50:
+            path = f"{path[:25]}...{path[-25:]}"
+      return path
 
 
 class StyleNameDialog(MessageBoxBase):

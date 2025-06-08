@@ -56,7 +56,7 @@ class MainWindow(FluentWindow):
         desktop = QApplication.desktop().availableGeometry()
         screen_center = desktop.center()
 
-        self.resize(max(min(1050, desktop.width() - 400), 800), max(min(950, desktop.height() - 100), 500))
+        self.resize(max(min(1050, desktop.width() - 400), 800), max(min(850, desktop.height() - 100), 500))
         self.setMinimumWidth(800)
         self.setMinimumHeight(500)
         self.setWindowIcon(QIcon(str(LOGO_PATH)))
