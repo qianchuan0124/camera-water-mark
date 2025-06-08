@@ -6,6 +6,7 @@ import os
 import re
 
 from app.utils.logger import setup_logger
+from PyQt5.QtGui import QColor
 from app.config import EXIFTOOL_PATH
 from datetime import datetime
 from pathlib import Path
@@ -121,61 +122,63 @@ def get_exif(path) -> dict:
 
     return exif_dict
 
+
 def update_custom_tags(image_path: str, tags: dict) -> bool:
-        """
-        更新自定义的 EXIF 标签
-        Args:
-            image_path: 图片路径
-            tags: 标签字典，键为标签名，值为标签值
-        Returns:
-            bool: 是否更新成功
-        """
-        try:
-            command = [exiftool_command(), "-overwrite_original"]
-            
-            # 添加所有标签到命令中
-            for tag, value in tags.items():
-                command.append(f"-{tag}={value}")
-            
-            command.append(image_path)
-            
-            if os.name == 'nt':
-                process = subprocess.Popen(
-                    command,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    creationflags=subprocess.CREATE_NO_WINDOW
-                )
-            else:
-                process = subprocess.Popen(
-                    command,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
-                )
-            
-            # 获取输出和错误信息
-            stdout, stderr = process.communicate()
-            
-            # 打印命令输出
-            if stdout:
-                logger.info(f"ExifTool output: {stdout}")
-            
-            # 打印错误信息
-            if stderr:
-                logger.error(f"ExifTool error: {stderr}")
-            
-            # 打印返回码
-            logger.info(f"ExifTool return code: {process.returncode}")
-            
-            if process.returncode != 0:
-                raise CustomError(f"ExifTool failed: {stderr}", 601)
-                
-            return process.returncode == 0
-            
-        except Exception as e:
-            error_msg = f"Error updating custom tags: {str(e)}"
-            logger.error(error_msg)
-            raise CustomError(error_msg, 601)
+    """
+    更新自定义的 EXIF 标签
+    Args:
+        image_path: 图片路径
+        tags: 标签字典，键为标签名，值为标签值
+    Returns:
+        bool: 是否更新成功
+    """
+    try:
+        command = [exiftool_command(), "-overwrite_original"]
+
+        # 添加所有标签到命令中
+        for tag, value in tags.items():
+            command.append(f"-{tag}={value}")
+
+        command.append(image_path)
+
+        if os.name == 'nt':
+            process = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            )
+        else:
+            process = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+        # 获取输出和错误信息
+        stdout, stderr = process.communicate()
+
+        # 打印命令输出
+        if stdout:
+            logger.info(f"ExifTool output: {stdout}")
+
+        # 打印错误信息
+        if stderr:
+            logger.error(f"ExifTool error: {stderr}")
+
+        # 打印返回码
+        logger.info(f"ExifTool return code: {process.returncode}")
+
+        if process.returncode != 0:
+            raise CustomError(f"ExifTool failed: {stderr}", 601)
+
+        return process.returncode == 0
+
+    except Exception as e:
+        error_msg = f"Error updating custom tags: {str(e)}"
+        logger.error(error_msg)
+        raise CustomError(error_msg, 601)
+
 
 def extract_attribute(data_dict: dict, *keys, default_value: str = '', prefix='', suffix='') -> str:
     """
@@ -261,13 +264,14 @@ def calculate_pixel_count(width: int, height: int) -> str:
     return f"{megapixel_count:.2f} MP"
 
 
-def append_image_by_side(background, images, side='left', padding=200, is_start=False):
+def append_image_by_side(background, images, side='left', padding=200, inner_padding=200, is_start=False):
     """
     将图片横向拼接到背景图片中
     :param background: 背景图片对象
     :param images: 图片对象列表
     :param side: 拼接方向，left/right
-    :param padding: 图片之间的间距
+    :param padding: 边缘间距, is_start为True才生效
+    :param inner_padding: 图片之间的间距    
     :param is_start: 是否在最左侧添加 padding
     :return: 拼接后的图片对象
     """
@@ -283,7 +287,7 @@ def append_image_by_side(background, images, side='left', padding=200, is_start=
             i = resize_image_with_height(
                 i, background.height, auto_close=False)
             x_offset -= i.width
-            x_offset -= padding
+            x_offset -= inner_padding
             background.paste(i, (x_offset, 0))
     else:
         if is_start:
@@ -297,7 +301,7 @@ def append_image_by_side(background, images, side='left', padding=200, is_start=
                 i, background.height, auto_close=False)
             background.paste(i, (x_offset, 0))
             x_offset += i.width
-            x_offset += padding
+            x_offset += inner_padding
 
 
 def resize_image_with_height(image, height, auto_close=True):
@@ -325,7 +329,7 @@ def resize_image_with_height(image, height, auto_close=True):
     return resized_image
 
 
-def concatenate_image(images, align='left'):
+def concatenate_image(images, align='left', color=TRANSPARENT):
     """
     将多张图片拼接成一列
     :param images: 图片对象列表
@@ -337,7 +341,7 @@ def concatenate_image(images, align='left'):
     sum_height = sum(heights)
     max_width = max(widths)
 
-    new_img = Image.new('RGBA', (max_width, sum_height), color=TRANSPARENT)
+    new_img = Image.new('RGBA', (max_width, sum_height), color=color)
 
     x_offset = 0
     y_offset = 0
@@ -430,7 +434,8 @@ def padding_image(image, padding_size, padding_location='tb', color=TRANSPARENT)
     if 'r' in padding_location:
         total_width += padding_size
 
-    padding_img = Image.new('RGBA', (total_width, total_height), color=color)
+    padding_img = Image.new(
+        'RGBA', (total_width, total_height), color=color)
     padding_img.paste(image, (x_offset, y_offset))
     return padding_img
 
@@ -459,6 +464,9 @@ def resize_image_with_width(image, width, auto_close=True):
     # 返回缩放后的图片对象
     return resized_image
 
+def resize_height_with_size(width: float, height: float, target_width: float):
+    scale = target_width / width
+    return round(height * scale)
 
 def square_image(image, auto_close=True) -> Image.Image:
     """
@@ -485,7 +493,7 @@ def square_image(image, auto_close=True) -> Image.Image:
     return square_img
 
 
-def text_to_image(content, font, bold_font, is_bold=False, fill='black') -> Image.Image:
+def text_to_image(content, font, bold_font, is_bold=False, fill='black', color=TRANSPARENT) -> Image.Image:
     """
     将文字内容转换为图片
     """
@@ -494,7 +502,7 @@ def text_to_image(content, font, bold_font, is_bold=False, fill='black') -> Imag
     if content == '':
         content = '   '
     _, _, text_width, text_height = font.getbbox(content)
-    image = Image.new('RGBA', (text_width, text_height), color=TRANSPARENT)
+    image = Image.new('RGBA', (text_width, text_height), color=color)
     draw = ImageDraw.Draw(image)
     draw.text((0, 0), content, fill=fill, font=font)
     return image
@@ -518,25 +526,60 @@ def extract_attribute(data_dict: dict, *keys, default_value: str = '', prefix=''
 def hex_to_rgba(hex_color, alpha=255):
     """
     将十六进制颜色字符串转换为 (R, G, B, A) 格式的元组。
+    支持 #RRGGBB 或 #RRGGBBAA 格式。
 
-    :param hex_color: 十六进制颜色字符串，例如 "#FFFFFF"
-    :param alpha: 透明度值（默认为 255，表示完全不透明）
+    :param hex_color: 十六进制颜色字符串，例如 "#FFFFFF" 或 "#FFFFFFFF"
+    :param alpha: 透明度值（默认为 255，表示完全不透明），当 hex_color 含有 alpha 时优先使用 hex_color 的
     :return: (R, G, B, A) 格式的元组
     """
-    # 去掉 # 符号
     hex_color = hex_color.lstrip('#')
 
-    # 确保十六进制字符串的长度为 6
-    if len(hex_color) != 6:
-        raise ValueError("无效的十六进制颜色字符串。长度应为 6 个字符。")
+    if len(hex_color) == 6:
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        a = alpha
+    elif len(hex_color) == 8:
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        a = int(hex_color[6:8], 16)
+    else:
+        raise ValueError("无效的十六进制颜色字符串。长度应为 6 或 8 个字符。")
 
-    # 转换为整数
-    rgb = int(hex_color, 16)
+    return (r, g, b, a)
 
-    # 提取 R, G, B 分量
-    r = (rgb >> 16) & 0xFF
-    g = (rgb >> 8) & 0xFF
-    b = rgb & 0xFF
+def qcolor_to_hex(color: QColor) -> str:
+        # 获取红、绿、蓝、Alpha 分量（0-255）
+        red = color.red()
+        green = color.green()
+        blue = color.blue()
+        alpha = color.alpha()
 
-    # 返回 (R, G, B, A) 格式的元组
-    return (r, g, b, alpha)
+        # 转换为两位十六进制字符串（补零）
+        red_hex = f"{red:02X}"
+        green_hex = f"{green:02X}"
+        blue_hex = f"{blue:02X}"
+        alpha_hex = f"{alpha:02X}"
+
+        # 拼接为 #RRGGBBAA 格式
+        return f"#{red_hex}{green_hex}{blue_hex}{alpha_hex}"
+
+def hex_to_qcolor(hex_color: str) -> QColor:
+    """将十六进制RGBA颜色字符串转换为QColor对象"""
+    if hex_color.startswith('#'):
+        hex_color = hex_color[1:]
+    if len(hex_color) == 8:  # 确保是8位十六进制颜色
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        a = int(hex_color[6:8], 16)
+        return QColor(r, g, b, a)
+    elif len(hex_color) == 6:
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        return QColor(r, g, b, 255)
+    else:
+        raise ValueError(
+            "Invalid hex color format. Expected #RRGGBBAA format.")

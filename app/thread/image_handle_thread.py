@@ -16,6 +16,7 @@ from app.utils.image_handle import (
     padding_image,
     append_image_by_side,
     resize_image_with_width,
+    resize_height_with_size,
     merge_images,
     resize_image_with_height
 )
@@ -26,7 +27,7 @@ from app.utils.image_render import (
     add_white_margin,
     add_background_blur
 )
-
+from app.entity.enums import ExifId, DISPLAY_TYPE
 from app.utils.logger import setup_logger
 logger = setup_logger("image_handle_thread")
 
@@ -132,7 +133,11 @@ class ImageHandleThread(QThread):
         for index, task in enumerate(self.tasks):
             try:
                 self.image = Image.open(task.image_path)
-                self.image = add_rounded_corners(self.image)
+                if cfg.backgroundBlur.value:
+                    bgColor = TRANSPARENT
+                else:
+                    bgColor = cfg.backgroundColor.value
+                self.image = add_rounded_corners(self.image, bgColor)
                 self.watermark_img = self.image.copy()
                 image_info = ImageInfo(task.image_path)
                 self.fix_orientation(image_info)
@@ -157,75 +162,152 @@ class ImageHandleThread(QThread):
         self.finished.emit(HandleProgress(self.tasks, 100))
 
     def hanle_task(self, image_info: ImageInfo):
-        if (cfg.addShadow.value):
+        mode: MARK_MODE = MARK_MODE.key(cfg.markMode.value)
+        top_height = self.get_height()
+        top_width = self.get_width()
+        if cfg.backgroundBlur.value:
+            top_height = top_height * (1 + cfg.blurTopPadding.value + cfg.blurBottomPadding.value)
+            top_width = top_width * (1 + cfg.blurHorizontalPadding.value * 2)
+
+        if (cfg.backgroundBlur.value):
+            image = add_background_blur(
+                self.get_watermark_img(), bottom_padding=self.cal_water_mark_height(top_height, top_width, mode))
+            self.update_watermark_img(image)
+        elif (cfg.addShadow.value):
             image = add_shadow(self.get_watermark_img())
             self.update_watermark_img(image)
 
-        if (cfg.backgroundBlur.value):
-            image = add_background_blur(self.get_watermark_img())
-            self.update_watermark_img(image)
-
+        if mode == MARK_MODE.SIMPLE:
+            self.simple_mode(image_info, top_height)
+        else:
+            self.standard_mode(image_info, int(top_width))
+        
         if (cfg.whiteMargin.value):
             image = add_white_margin(self.get_watermark_img())
             self.update_watermark_img(image)
 
-        model: MARK_MODE = MARK_MODE.key(cfg.markMode.value)
-        if model == MARK_MODE.SIMPLE:
-            self.simple_mode(image_info)
+    def simple_mode(self, image_info: ImageInfo, origin_height: float):
+        watermark = self.generate_simple_watermark(image_info, origin_height)
+
+        if cfg.backgroundBlur.value:
+            # 将水印图片底部对齐作为前景叠加到原图
+            bg = self.get_watermark_img().convert('RGBA')
+            fg = Image.new('RGBA', bg.size, TRANSPARENT)
+            fg.paste(watermark, (0, bg.height - watermark.height), watermark)
+            result = Image.alpha_composite(bg, fg)
+
+            self.update_watermark_img(result)
         else:
-            self.standard_mode(image_info)
+             # 将水印图片作为底部扩展叠加到原图
+            bg = Image.new('RGBA', watermark.size, color='white')
+            bg = Image.alpha_composite(bg, watermark)
 
-    def simple_mode(self, image_info: ImageInfo):
-        ratio = .16 if self.get_ratio() >= 1 else .1
-        padding_ratio = .5 if self.get_ratio() >= 1 else .5
+            watermark_img = merge_images([self.get_watermark_img(), bg], 1, 1)
+            self.update_watermark_img(watermark_img) 
+    
+    def cal_water_mark_height(self, height: float, width: float, mode: MARK_MODE):
+        if mode == MARK_MODE.SIMPLE:
+            return height * cfg.simpleScale.value
+        else:
+            ratio = (.04 if self.get_ratio() >= 1 else .09) + \
+            0.02 * cfg.get_font_padding_level()
+            result = resize_height_with_size(NORMAL_HEIGHT / ratio, NORMAL_HEIGHT, width)
+            if cfg.addShadow.value:
+              result += cfg.shadowBlur.value * 2
+            return result
 
-        first_text = text_to_image('Shot on',
-                                   font_manager.get_font(),
-                                   font_manager.get_bold_font(),
-                                   is_bold=False,
-                                   fill='#212121')
-        model = text_to_image(image_info.model().replace(r'/', ' ').replace(r'_', ' '),
-                              font_manager.get_font(),
-                              font_manager.get_bold_font(),
-                              is_bold=True,
-                              fill='#D32F2F')
-        make = text_to_image(image_info.make().split(' ')[0],
-                             font_manager.get_font(),
-                             font_manager.get_bold_font(),
-                             is_bold=True,
-                             fill='#212121')
-        first_line = merge_images(
-            [first_text, MIDDLE_HORIZONTAL_GAP, model, MIDDLE_HORIZONTAL_GAP, make], 0, 1)
-        second_line_text = image_info.get_param_str()
-        second_line = text_to_image(second_line_text,
-                                    font_manager.get_font(),
-                                    font_manager.get_bold_font(),
-                                    is_bold=False,
-                                    fill='#9E9E9E')
-        image = merge_images(
-            [first_line, MIDDLE_VERTICAL_GAP, second_line], 1, 0)
-        height = self.get_height() * ratio * padding_ratio
+    def generate_simple_watermark(self, image_info: ImageInfo, origin_height: float):
+        ratio = cfg.simpleScale.value
+        padding_ratio = cfg.simplePaddingScale.value
+        logo_ratio = cfg.simpleLogoSize.value
+
+        self.bg_color = cfg.backgroundColor.value
+
+        images = []
+        if cfg.logoEnable.value:
+            logo = self.load_logo(image_info.logo())
+            logo = resize_image_with_height(logo, int(logo.height * logo_ratio), auto_close=False)
+            images.append(logo)
+            images.append(LARGE_HORIZONTAL_GAP)
+
+        first_display_type: DISPLAY_TYPE = DISPLAY_TYPE.from_str(cfg.simpleFirstLineType.value)
+        if first_display_type != DISPLAY_TYPE.NONE:
+            first_text = text_to_image(image_info.parse_exif_info(cfg.simpleFirstLineType.value),
+                                       font_manager.get_font(),
+                                       font_manager.get_bold_font(),
+                                       is_bold=cfg.simpleFirstLineBold.value,
+                                       fill=cfg.simpleFirstLineColor.value)
+            images.append(first_text)
+            images.append(MIDDLE_VERTICAL_GAP)
+
+        second_display_type: DISPLAY_TYPE = DISPLAY_TYPE.from_str(cfg.simpleSecondLineType.value)
+        if second_display_type != DISPLAY_TYPE.NONE:
+            second_text = text_to_image(image_info.parse_exif_info(cfg.simpleSecondLineType.value),
+                                        font_manager.get_font(),
+                                        font_manager.get_bold_font(),
+                                        is_bold=cfg.simpleSecondLineBold.value,
+                                        fill=cfg.simpleSecondLineColor.value)
+            images.append(second_text)
+            images.append(MIDDLE_VERTICAL_GAP)
+        
+        third_display_type: DISPLAY_TYPE = DISPLAY_TYPE.from_str(cfg.simpleThirdLineType.value)
+        if third_display_type != DISPLAY_TYPE.NONE:
+            third_text = text_to_image(image_info.parse_exif_info(cfg.simpleThirdLineType.value),
+                                       font_manager.get_font(),
+                                       font_manager.get_bold_font(),
+                                       is_bold=cfg.simpleThirdLineBold.value,
+                                       fill=cfg.simpleThirdLineColor.value)
+            images.append(third_text)
+
+        image = merge_images(images, 1, 0)
+
+        content_height = origin_height * ratio
+        
+        height = content_height * (1 - padding_ratio)
         image = resize_image_with_height(image, int(height))
-        horizontal_padding = int((self.get_width() - image.width) / 2)
-        vertical_padding = int((self.get_height() * ratio - image.height) / 2)
+        bg = Image.new('RGBA', image.size, self.bg_color)
+        image = Image.alpha_composite(bg, image)
+        left_padding = int((self.get_width() - image.width) / 2)
+        right_padding = self.get_width() - image.width - left_padding
+        vertical_padding = int((content_height - image.height) / 2)
 
-        watermark = ImageOps.expand(
-            image, (horizontal_padding, vertical_padding), fill=TRANSPARENT)
-        bg = Image.new('RGBA', watermark.size, color='white')
-        bg = Image.alpha_composite(bg, watermark)
+        return ImageOps.expand(
+            image, (left_padding, vertical_padding, right_padding, vertical_padding), fill=self.bg_color)
 
-        watermark_img = merge_images([self.get_watermark_img(), bg], 1, 1)
-        self.update_watermark_img(watermark_img)
+    def standard_mode(self, image_info: ImageInfo, origin_width: int):
+        watermark = self.generate_standard_watermark(image_info, origin_width)
 
-    def standard_mode(self, image_info: ImageInfo):
+        if cfg.backgroundBlur.value:
+            # 将水印图片底部对齐作为前景叠加到原图
+            bg = self.get_watermark_img().convert('RGBA')
+            fg = Image.new('RGBA', bg.size, TRANSPARENT)
+            fg.paste(watermark, (0, bg.height - watermark.height), watermark)
+            result = Image.alpha_composite(bg, fg)
+        else:  
+          # 将水印图片放置在原始图片的下方
+          watermark_resized = watermark.resize((self.get_width(), watermark.height))
+          bg = ImageOps.expand(self.get_watermark_img().convert('RGBA'),
+                              border=(0, 0, 0, watermark_resized.height),
+                              fill=TRANSPARENT)
+          fg = ImageOps.expand(watermark_resized, border=(
+              0, self.get_height(), 0, 0), fill=TRANSPARENT)
+          result = Image.alpha_composite(bg, fg)
+        
+        watermark.close()
+        # 更新图片对象
+        result = ImageOps.exif_transpose(result).convert('RGBA')
+        self.update_watermark_img(result)
+
+    def generate_standard_watermark(self, image_info: ImageInfo, origin_width: int):
         self.bg_color = cfg.backgroundColor.value
 
         # 下方水印的占比
         ratio = (.04 if self.get_ratio() >= 1 else .09) + \
             0.02 * cfg.get_font_padding_level()
         # 水印中上下边缘空白部分的占比
-        padding_ratio = (.52 if self.get_ratio() >= 1 else .7) - \
+        padding_ratio = (.54 if self.get_ratio() >= 1 else .7) - \
             0.04 * cfg.get_font_padding_level()
+        final_padding_ratio = padding_ratio if cfg.standardVerticalPadding.value < 0 else cfg.standardVerticalPadding.value
 
         # 创建一个空白的水印图片
         watermark = Image.new(
@@ -237,75 +319,81 @@ class ImageHandleThread(QThread):
                                      font_manager.get_font(),
                                      font_manager.get_bold_font(),
                                      is_bold=cfg.leftTopBold.value,
-                                     fill=cfg.leftTopFontColor.value)
+                                     fill=cfg.leftTopFontColor.value,
+                                     color=self.bg_color)
             left_bottom = text_to_image(image_info.parse_exif_info(cfg.leftBottomType.value),
                                         font_manager.get_font(),
                                         font_manager.get_bold_font(),
                                         is_bold=cfg.leftBottomBold.value,
-                                        fill=cfg.leftBottomFontColor.value)
-            left = concatenate_image([left_top, empty_padding, left_bottom])
+                                        fill=cfg.leftBottomFontColor.value,
+                                        color=self.bg_color)
+            left = concatenate_image(
+                [left_top, empty_padding, left_bottom], color=self.bg_color)
             # 填充右边的文字内容
             right_top = text_to_image(image_info.parse_exif_info(cfg.rightTopType.value),
                                       font_manager.get_font(),
                                       font_manager.get_bold_font(),
                                       is_bold=cfg.rightTopBold.value,
-                                      fill=cfg.rightTopFontColor.value)
+                                      fill=cfg.rightTopFontColor.value,
+                                      color=self.bg_color)
             right_bottom = text_to_image(image_info.parse_exif_info(cfg.rightBottomType.value),
                                          font_manager.get_font(),
                                          font_manager.get_bold_font(),
                                          is_bold=cfg.rightBottomBold.value,
-                                         fill=cfg.rightBottomFontColor.value)
-            right = concatenate_image([right_top, empty_padding, right_bottom])
+                                         fill=cfg.rightBottomFontColor.value,
+                                         color=self.bg_color)
+            right = concatenate_image(
+                [right_top, empty_padding, right_bottom], color=self.bg_color)
 
         # 将左右两边的文字内容等比例缩放到相同的高度
         max_height = max(left.height, right.height)
-        left = padding_image(left, int(max_height * padding_ratio), 'tb')
-        right = padding_image(right, int(max_height * padding_ratio), 't')
-        right = padding_image(right, left.height - right.height, 'b')
+        left = padding_image(
+            left, int(max_height * final_padding_ratio), 'tb', color=self.bg_color)
+        right = padding_image(right, int(
+            max_height * final_padding_ratio), 't', color=self.bg_color)
+        right = padding_image(right, left.height -
+                              right.height, 'b',  color=self.bg_color)
 
         logo = self.load_logo(image_info.logo())
+        line = Image.new('RGBA', (20, 1000), color=self.bg_color)
         if cfg.logoEnable.value:
             if cfg.isLogoLeft.value:
                 # 如果 logo 在左边
-                line = LINE_TRANSPARENT.copy()
-                logo = padding_image(logo, int(padding_ratio * logo.height))
+                line = line.copy()
+                logo = padding_image(
+                    logo, int(final_padding_ratio * logo.height), color=self.bg_color)
                 append_image_by_side(
-                    watermark, [line, logo, left], is_start=logo is None)
-                append_image_by_side(watermark, [right], side='right')
+                    watermark, 
+                    [line, logo, left], 
+                    padding=cfg.standardLeftPadding.value, 
+                    is_start=True
+                )
+                append_image_by_side(watermark, [right], padding=cfg.standardRightPadding.value, side='right', is_start=True)
             else:
                 # 如果 logo 在右边
                 if logo is not None:
                     # 如果 logo 不为空，等比例缩小 logo
                     logo = padding_image(
-                        logo, int(padding_ratio * logo.height))
+                        logo, int(padding_ratio * logo.height), color=self.bg_color)
                     # 插入一根线条用于分割 logo 和文字
                     line = padding_image(LINE_GRAY, int(
-                        padding_ratio * LINE_GRAY.height * .8))
+                        padding_ratio * LINE_GRAY.height * .8), color=self.bg_color)
                 else:
-                    line = LINE_TRANSPARENT.copy()
-                append_image_by_side(watermark, [left], is_start=True)
+                    line = line.copy()
+                append_image_by_side(watermark, [left], padding=cfg.standardLeftPadding.value, is_start=True)
                 append_image_by_side(
-                    watermark, [logo, line, right], side='right')
+                    watermark, [logo, line, right], padding=cfg.standardRightPadding.value, side='right', is_start=True)
                 line.close()
         else:
-            append_image_by_side(watermark, [left], is_start=True)
-            append_image_by_side(watermark, [right], side='right')
+            append_image_by_side(watermark, [left], padding=cfg.standardLeftPadding.value, is_start=True)
+            append_image_by_side(watermark, [right], padding=cfg.standardRightPadding.value, side='right', is_start=True)
         left.close()
         right.close()
 
         # 缩放水印的大小
-        watermark = resize_image_with_width(watermark, self.get_width())
-        # 将水印图片放置在原始图片的下方
-        bg = ImageOps.expand(self.get_watermark_img().convert('RGBA'),
-                             border=(0, 0, 0, watermark.height),
-                             fill=self.bg_color)
-        fg = ImageOps.expand(watermark, border=(
-            0, self.get_height(), 0, 0), fill=TRANSPARENT)
-        result = Image.alpha_composite(bg, fg)
-        watermark.close()
-        # 更新图片对象
-        result = ImageOps.exif_transpose(result).convert('RGB')
-        self.update_watermark_img(result)
+        watermark = resize_image_with_width(watermark, origin_width)
+
+        return watermark
 
     def fix_orientation(self, image_info: ImageInfo):
         self.orientation = image_info.exif[ExifId.ORIENTATION.value] if ExifId.ORIENTATION.value in image_info.exif else 1

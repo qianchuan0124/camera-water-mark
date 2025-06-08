@@ -67,6 +67,8 @@ class ImageInfo(object):
         elif display == DISPLAY_TYPE.CAMERA_MODEL_LENS_MODEL:
             return ' '.join(
                 [self.model(), self.lens_model()])
+        elif display == DISPLAY_TYPE.NONE:
+            return ''
         return DEFAULT_VALUE
 
     def get_focal_length(self):

@@ -1,14 +1,21 @@
 {
     "Global": {
-        "AddShadow": true,
+        "AddShadow": false,
         "BackgroundBlur": false,
+        "BlurBottomPadding": 0.01,
+        "BlurExtent": 35,
+        "BlurHorizontalPadding": 0.09,
+        "BlurTopPadding": 0.09,
+        "ShadowBlur": 20,
+        "ShadowColor": "#0000003F",
         "UseEquivalentFocal": false,
         "UseOriginRatioPadding": false,
         "WhiteMargin": true,
-        "WhiteMarginWidth": 3
+        "WhiteMarginColor": "#FFFFFFFF",
+        "WhiteMarginWidth": 1
     },
     "Base": {
-        "BackgroundColor": "#ffffff",
+        "BackgroundColor": "#FFFFFFFF",
         "BaseFontName": "AlibabaPuHuiTi-2-45-Light",
         "BaseFontSize": 1,
         "BaseQuality": 100,
@@ -21,7 +28,8 @@
         "CustomLogoEnable": false,
         "CustomLogoPath": "",
         "isLogoLeft": true,
-        "LogoEnable": true
+        "LogoEnable": true,
+        "SimpleLogoSize": 0.3
     },
     "Layout": {
         "LeftBottomBold": false,
@@ -29,13 +37,27 @@
         "LeftBottomType": "Model",
         "LeftTopBold": true,
         "LeftTopFontColor": "#212121",
-        "LeftTopType": "LensModel",
+        "LeftTopType": "Make",
         "RightBottomBold": false,
         "RightBottomFontColor": "#757575",
         "RightBottomType": "Param",
         "RightTopBold": true,
         "RightTopFontColor": "#212121",
-        "RightTopType": "CameraMake_CameraModel"
+        "RightTopType": "LensMake_LensModel",
+        "SimpleFirstLineBold": false,
+        "SimpleFirstLineColor": "#212121",
+        "SimpleFirstLineType": "LensModel",
+        "SimplePaddingScale": 0.1,
+        "SimpleScale": 0.1,
+        "SimpleSecondLineBold": false,
+        "SimpleSecondLineColor": "#757575",
+        "SimpleSecondLineType": "None",
+        "SimpleThirdLineBold": false,
+        "SimpleThirdLineColor": "#757575",
+        "SimpleThirdLineType": "None",
+        "StandardLeftPadding": -200,
+        "StandardRightPadding": -200,
+        "StandardVerticalPadding": 0.5
     },
     "Mode": {
         "MarkMode": "standard"
