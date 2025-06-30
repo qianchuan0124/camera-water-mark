@@ -133,14 +133,14 @@ class ImageHandleThread(QThread):
         for index, task in enumerate(self.tasks):
             try:
                 self.image = Image.open(task.image_path)
+                image_info = ImageInfo(task.image_path)
+                self.fix_orientation(image_info)
                 if cfg.backgroundBlur.value:
                     bgColor = TRANSPARENT
                 else:
                     bgColor = cfg.backgroundColor.value
                 self.image = add_rounded_corners(self.image, bgColor)
                 self.watermark_img = self.image.copy()
-                image_info = ImageInfo(task.image_path)
-                self.fix_orientation(image_info)
                 self.tasks[index].status = ImageHandleStatus.PROCESSING
                 self.loading.emit(HandleProgress(self.tasks, progress))
                 self.hanle_task(image_info)
@@ -415,20 +415,6 @@ class ImageHandleThread(QThread):
             self.watermark_img.close()
 
     def save(self, target_path, quality=100):
-        if self.orientation == "Rotate 0":
-            pass
-        elif self.orientation == "Rotate 90 CW":
-            self.watermark_img = self.watermark_img.transpose(
-                Transpose.ROTATE_90)
-        elif self.orientation == "Rotate 180":
-            self.watermark_img = self.watermark_img.transpose(
-                Transpose.ROTATE_180)
-        elif self.orientation == "Rotate 270 CW":
-            self.watermark_img = self.watermark_img.transpose(
-                Transpose.ROTATE_270)
-        else:
-            pass
-
         if self.watermark_img.mode != 'RGB':
             self.watermark_img = self.watermark_img.convert('RGB')
 
