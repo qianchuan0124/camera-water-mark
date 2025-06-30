@@ -132,6 +132,11 @@
 
 <img src="./doc/images/question-6.png" alt="image-20250329143208299" style="zoom:100%;" />
 
+
+### 2025.6.30 —— v0.0.5更新
+修复问题:
+修复纵向照片添加水印后方向错乱的问题
+
 ## 💖 感谢致敬
 
 图片水印处理思路来源于[leslievan](https://github.com/leslievan)大佬的[semi-utils](https://github.com/leslievan/semi-utils)项目，感谢大佬提供的思路，本人只是做了一些微小的页面展示工作。
